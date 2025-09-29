@@ -1,0 +1,32 @@
+package grpcclient
+
+import (
+	"fmt"
+
+	"github.com/cprakhar/relief-ops/shared/env"
+	pb "github.com/cprakhar/relief-ops/shared/proto/user"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+type userServiceClient struct {
+	Client pb.UserServiceClient
+	conn   *grpc.ClientConn
+}
+
+func NewUserServiceClient() (*userServiceClient, error) {
+	userServiceURL := fmt.Sprintf("user-service%s", env.GetString("USER_GRPC_ADDR", ":9001"))
+	conn, err := grpc.NewClient(userServiceURL,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	client := pb.NewUserServiceClient(conn)
+	return &userServiceClient{Client: client, conn: conn}, nil
+}
+
+func (usc *userServiceClient) Close() error {
+	return usc.conn.Close()
+}

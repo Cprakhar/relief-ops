@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: relief-ops
+  labels:
+    app: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: pchhalotre/relief-ops.user-service:latest
+          ports:
+            - containerPort: 9001
+          env:
+            - name: USER_GRPC_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: api-gateway-config
+                  key: USER_GRPC_ADDR
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-config
+                  key: REDIS_ADDR
+            - name: REDIS_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-config
+                  key: REDIS_USER
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: REDIS_PASSWORD
+            - name: REDIS_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-config
+                  key: REDIS_DB
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: relief-ops
+spec:
+  type: ClusterIP
+  selector:
+    app: user-service
+  ports:
+    - protocol: TCP
+      port: 9001
+      targetPort: 9001
+      name: grpc
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: user-service-network-policy
+  namespace: relief-ops
+spec:
+  podSelector:
+    matchLabels:
+      app: user-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 9001
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 14800
