@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	DisasterService_ReportDisaster_FullMethodName = "/disaster.DisasterService/ReportDisaster"
 	DisasterService_GetDisaster_FullMethodName    = "/disaster.DisasterService/GetDisaster"
+	DisasterService_ReviewDisaster_FullMethodName = "/disaster.DisasterService/ReviewDisaster"
 )
 
 // DisasterServiceClient is the client API for DisasterService service.
@@ -29,6 +30,7 @@ const (
 type DisasterServiceClient interface {
 	ReportDisaster(ctx context.Context, in *ReportDisasterRequest, opts ...grpc.CallOption) (*ReportDisasterResponse, error)
 	GetDisaster(ctx context.Context, in *GetDisasterRequest, opts ...grpc.CallOption) (*GetDisasterResponse, error)
+	ReviewDisaster(ctx context.Context, in *ReviewDisasterRequest, opts ...grpc.CallOption) (*ReviewDisasterResponse, error)
 }
 
 type disasterServiceClient struct {
@@ -59,12 +61,23 @@ func (c *disasterServiceClient) GetDisaster(ctx context.Context, in *GetDisaster
 	return out, nil
 }
 
+func (c *disasterServiceClient) ReviewDisaster(ctx context.Context, in *ReviewDisasterRequest, opts ...grpc.CallOption) (*ReviewDisasterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReviewDisasterResponse)
+	err := c.cc.Invoke(ctx, DisasterService_ReviewDisaster_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DisasterServiceServer is the server API for DisasterService service.
 // All implementations must embed UnimplementedDisasterServiceServer
 // for forward compatibility.
 type DisasterServiceServer interface {
 	ReportDisaster(context.Context, *ReportDisasterRequest) (*ReportDisasterResponse, error)
 	GetDisaster(context.Context, *GetDisasterRequest) (*GetDisasterResponse, error)
+	ReviewDisaster(context.Context, *ReviewDisasterRequest) (*ReviewDisasterResponse, error)
 	mustEmbedUnimplementedDisasterServiceServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedDisasterServiceServer) ReportDisaster(context.Context, *Repor
 }
 func (UnimplementedDisasterServiceServer) GetDisaster(context.Context, *GetDisasterRequest) (*GetDisasterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDisaster not implemented")
+}
+func (UnimplementedDisasterServiceServer) ReviewDisaster(context.Context, *ReviewDisasterRequest) (*ReviewDisasterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReviewDisaster not implemented")
 }
 func (UnimplementedDisasterServiceServer) mustEmbedUnimplementedDisasterServiceServer() {}
 func (UnimplementedDisasterServiceServer) testEmbeddedByValue()                         {}
@@ -138,6 +154,24 @@ func _DisasterService_GetDisaster_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DisasterService_ReviewDisaster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReviewDisasterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DisasterServiceServer).ReviewDisaster(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DisasterService_ReviewDisaster_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DisasterServiceServer).ReviewDisaster(ctx, req.(*ReviewDisasterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DisasterService_ServiceDesc is the grpc.ServiceDesc for DisasterService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var DisasterService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDisaster",
 			Handler:    _DisasterService_GetDisaster_Handler,
+		},
+		{
+			MethodName: "ReviewDisaster",
+			Handler:    _DisasterService_ReviewDisaster_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

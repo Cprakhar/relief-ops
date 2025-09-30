@@ -1,0 +1,30 @@
+{{define "subject"}} New Disaster Reported - Review Required {{end}}
+
+{{define "body"}}
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  </head>
+  <body>
+    <p>Hi Admin,</p>
+
+    <p>A new disaster has been reported on <b>Relief Ops</b>. Please review the details below:</p>
+
+    <ul>
+      <li><b>ContributorID:</b> {{.ContributorID}}</li>
+      <li><b>DisasterID:</b> {{.DisasterID}}</li>
+    </ul>
+
+    <p>You can review and take action on this report here:</p>
+    <p><a href="{{.ReviewURL}}">{{.ReviewURL}}</a></p>
+
+    <p>If this reported disaster was submitted in error, no action is required.</p>
+    <p>It will be automatically dismissed after 7 days if no action is taken.</p>
+
+    <p>Thanks,</p>
+    <p>The Relief Ops Team</p>
+  </body>
+</html>
+{{end}}

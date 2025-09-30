@@ -16,11 +16,16 @@ func NewHTTPUserHandler() *gin.Engine {
 	// Health check endpoint
 	r.GET("/health", HealthCheckHandler)
 
+	// Admin endpoints
+	r.POST("/admin/review/:id", ReviewDisasterHandler)
+
 	// User endpoints
 	r.POST("/users/register", RegisterUserHandler)
 
 	// Disaster endpoints
 	r.POST("/disasters", ReportDisasterHandler)
+	r.GET("/disasters", GetAllDisastersHandler)
+	r.GET("/disasters/:id", GetDisasterByIDHandler)
 	return r
 }
 
@@ -102,4 +107,40 @@ func ReportDisasterHandler(ctx *gin.Context) {
 	}
 
 	ctx.JSON(200, gin.H{"disaster_id": pbRes.GetId()})
+}
+
+func ReviewDisasterHandler(ctx *gin.Context) {
+	// Get the admin ID from the context (set by authentication middleware)
+	adminID := "some-admin-id"
+
+	disasterID := ctx.Param("id")
+	decision := ctx.Query("decision") // expected values: "approve" or "reject"
+
+	disasterClient, err := grpcclient.NewDisasterServiceClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer disasterClient.Close()
+
+	pbReq := &pbd.ReviewDisasterRequest{
+		Id:      disasterID,
+		AdminID: adminID,
+		Status:  decision,
+	}
+
+	pbRes, err := disasterClient.Client.ReviewDisaster(ctx, pbReq)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(200, gin.H{"disaster_id": pbRes.GetId(), "status": pbRes.GetStatus()})
+}
+
+func GetAllDisastersHandler(ctx *gin.Context) {
+
+}
+
+func GetDisasterByIDHandler(ctx *gin.Context) {
+	
 }

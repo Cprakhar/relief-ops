@@ -21,6 +21,26 @@ spec:
           ports:
             - containerPort: 9001
           env:
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: kafka-config
+                  key: KAFKA_BROKERS
+            - name: FROM_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: sendgrid-secret
+                  key: FROM_EMAIL
+            - name: SENDGRID_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sendgrid-secret
+                  key: SENDGRID_API_KEY
+            - name: WEB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: api-gateway-config
+                  key: WEB_URL
             - name: USER_GRPC_ADDR
               valueFrom:
                 configMapKeyRef:

@@ -9,6 +9,18 @@ option go_package = "shared/proto/disaster;disaster";
 service DisasterService {
     rpc ReportDisaster (ReportDisasterRequest) returns (ReportDisasterResponse);
     rpc GetDisaster (GetDisasterRequest) returns (GetDisasterResponse);
+    rpc ReviewDisaster (ReviewDisasterRequest) returns (ReviewDisasterResponse);
+}
+
+message ReviewDisasterRequest {
+    string id = 1;
+    string adminID = 2;
+    string status = 3;
+}
+
+message ReviewDisasterResponse {
+    string id = 1;
+    string status = 2;
 }
 
 message ReportDisasterRequest {

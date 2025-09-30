@@ -6,6 +6,11 @@ import (
 	"github.com/cprakhar/relief-ops/services/user-service/repo"
 )
 
+const (
+	AdminRole       = "admin"
+	ContributorRole = "contributor"
+)
+
 type userService struct {
 	repo repo.UserRepo
 }
@@ -15,6 +20,7 @@ type UserService interface {
 	CreateUser(ctx context.Context, user *repo.User) (string, error)
 	GetUserByEmail(ctx context.Context, email string) (*repo.User, error)
 	UserExists(ctx context.Context, email string) bool
+	GetAdmins(ctx context.Context) ([]*repo.User, error)
 }
 
 // NewUserService creates a new instance of userService.
@@ -36,4 +42,9 @@ func (s *userService) GetUserByEmail(ctx context.Context, email string) (*repo.U
 func (s *userService) UserExists(ctx context.Context, email string) bool {
 	_, err := s.GetUserByEmail(ctx, email)
 	return err == nil
+}
+
+// GetAdmins retrieves all users with the admin role.
+func (s *userService) GetAdmins(ctx context.Context) ([]*repo.User, error) {
+	return s.repo.GetByRole(ctx, AdminRole)
 }

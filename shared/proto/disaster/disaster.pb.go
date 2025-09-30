@@ -22,6 +22,118 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ReviewDisasterRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	AdminID       string                 `protobuf:"bytes,2,opt,name=adminID,proto3" json:"adminID,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReviewDisasterRequest) Reset() {
+	*x = ReviewDisasterRequest{}
+	mi := &file_disaster_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewDisasterRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewDisasterRequest) ProtoMessage() {}
+
+func (x *ReviewDisasterRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_disaster_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReviewDisasterRequest.ProtoReflect.Descriptor instead.
+func (*ReviewDisasterRequest) Descriptor() ([]byte, []int) {
+	return file_disaster_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ReviewDisasterRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ReviewDisasterRequest) GetAdminID() string {
+	if x != nil {
+		return x.AdminID
+	}
+	return ""
+}
+
+func (x *ReviewDisasterRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type ReviewDisasterResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReviewDisasterResponse) Reset() {
+	*x = ReviewDisasterResponse{}
+	mi := &file_disaster_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewDisasterResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewDisasterResponse) ProtoMessage() {}
+
+func (x *ReviewDisasterResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_disaster_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReviewDisasterResponse.ProtoReflect.Descriptor instead.
+func (*ReviewDisasterResponse) Descriptor() ([]byte, []int) {
+	return file_disaster_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ReviewDisasterResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ReviewDisasterResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
 type ReportDisasterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
@@ -36,7 +148,7 @@ type ReportDisasterRequest struct {
 
 func (x *ReportDisasterRequest) Reset() {
 	*x = ReportDisasterRequest{}
-	mi := &file_disaster_proto_msgTypes[0]
+	mi := &file_disaster_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +160,7 @@ func (x *ReportDisasterRequest) String() string {
 func (*ReportDisasterRequest) ProtoMessage() {}
 
 func (x *ReportDisasterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_disaster_proto_msgTypes[0]
+	mi := &file_disaster_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +173,7 @@ func (x *ReportDisasterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportDisasterRequest.ProtoReflect.Descriptor instead.
 func (*ReportDisasterRequest) Descriptor() ([]byte, []int) {
-	return file_disaster_proto_rawDescGZIP(), []int{0}
+	return file_disaster_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ReportDisasterRequest) GetTitle() string {
@@ -116,7 +228,7 @@ type Coordinates struct {
 
 func (x *Coordinates) Reset() {
 	*x = Coordinates{}
-	mi := &file_disaster_proto_msgTypes[1]
+	mi := &file_disaster_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -128,7 +240,7 @@ func (x *Coordinates) String() string {
 func (*Coordinates) ProtoMessage() {}
 
 func (x *Coordinates) ProtoReflect() protoreflect.Message {
-	mi := &file_disaster_proto_msgTypes[1]
+	mi := &file_disaster_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -141,7 +253,7 @@ func (x *Coordinates) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Coordinates.ProtoReflect.Descriptor instead.
 func (*Coordinates) Descriptor() ([]byte, []int) {
-	return file_disaster_proto_rawDescGZIP(), []int{1}
+	return file_disaster_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Coordinates) GetLatitude() float64 {
@@ -168,7 +280,7 @@ type ReportDisasterResponse struct {
 
 func (x *ReportDisasterResponse) Reset() {
 	*x = ReportDisasterResponse{}
-	mi := &file_disaster_proto_msgTypes[2]
+	mi := &file_disaster_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -180,7 +292,7 @@ func (x *ReportDisasterResponse) String() string {
 func (*ReportDisasterResponse) ProtoMessage() {}
 
 func (x *ReportDisasterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_disaster_proto_msgTypes[2]
+	mi := &file_disaster_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -193,7 +305,7 @@ func (x *ReportDisasterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportDisasterResponse.ProtoReflect.Descriptor instead.
 func (*ReportDisasterResponse) Descriptor() ([]byte, []int) {
-	return file_disaster_proto_rawDescGZIP(), []int{2}
+	return file_disaster_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ReportDisasterResponse) GetId() string {
@@ -219,7 +331,7 @@ type GetDisasterRequest struct {
 
 func (x *GetDisasterRequest) Reset() {
 	*x = GetDisasterRequest{}
-	mi := &file_disaster_proto_msgTypes[3]
+	mi := &file_disaster_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -231,7 +343,7 @@ func (x *GetDisasterRequest) String() string {
 func (*GetDisasterRequest) ProtoMessage() {}
 
 func (x *GetDisasterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_disaster_proto_msgTypes[3]
+	mi := &file_disaster_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -244,7 +356,7 @@ func (x *GetDisasterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDisasterRequest.ProtoReflect.Descriptor instead.
 func (*GetDisasterRequest) Descriptor() ([]byte, []int) {
-	return file_disaster_proto_rawDescGZIP(), []int{3}
+	return file_disaster_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetDisasterRequest) GetId() string {
@@ -273,7 +385,7 @@ type GetDisasterResponse struct {
 
 func (x *GetDisasterResponse) Reset() {
 	*x = GetDisasterResponse{}
-	mi := &file_disaster_proto_msgTypes[4]
+	mi := &file_disaster_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -285,7 +397,7 @@ func (x *GetDisasterResponse) String() string {
 func (*GetDisasterResponse) ProtoMessage() {}
 
 func (x *GetDisasterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_disaster_proto_msgTypes[4]
+	mi := &file_disaster_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -298,7 +410,7 @@ func (x *GetDisasterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDisasterResponse.ProtoReflect.Descriptor instead.
 func (*GetDisasterResponse) Descriptor() ([]byte, []int) {
-	return file_disaster_proto_rawDescGZIP(), []int{4}
+	return file_disaster_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetDisasterResponse) GetId() string {
@@ -390,7 +502,7 @@ type Resource struct {
 
 func (x *Resource) Reset() {
 	*x = Resource{}
-	mi := &file_disaster_proto_msgTypes[5]
+	mi := &file_disaster_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -402,7 +514,7 @@ func (x *Resource) String() string {
 func (*Resource) ProtoMessage() {}
 
 func (x *Resource) ProtoReflect() protoreflect.Message {
-	mi := &file_disaster_proto_msgTypes[5]
+	mi := &file_disaster_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -415,7 +527,7 @@ func (x *Resource) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Resource.ProtoReflect.Descriptor instead.
 func (*Resource) Descriptor() ([]byte, []int) {
-	return file_disaster_proto_rawDescGZIP(), []int{5}
+	return file_disaster_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Resource) GetId() string {
@@ -450,7 +562,14 @@ var File_disaster_proto protoreflect.FileDescriptor
 
 const file_disaster_proto_rawDesc = "" +
 	"\n" +
-	"\x0edisaster.proto\x12\bdisaster\x1a\x1fgoogle/protobuf/timestamp.proto\"\xda\x01\n" +
+	"\x0edisaster.proto\x12\bdisaster\x1a\x1fgoogle/protobuf/timestamp.proto\"Y\n" +
+	"\x15ReviewDisasterRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
+	"\aadminID\x18\x02 \x01(\tR\aadminID\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\"@\n" +
+	"\x16ReviewDisasterResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\"\xda\x01\n" +
 	"\x15ReportDisasterRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x12\n" +
@@ -483,10 +602,11 @@ const file_disaster_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x121\n" +
-	"\blocation\x18\x04 \x01(\v2\x15.disaster.CoordinatesR\blocation2\xb2\x01\n" +
+	"\blocation\x18\x04 \x01(\v2\x15.disaster.CoordinatesR\blocation2\x87\x02\n" +
 	"\x0fDisasterService\x12S\n" +
 	"\x0eReportDisaster\x12\x1f.disaster.ReportDisasterRequest\x1a .disaster.ReportDisasterResponse\x12J\n" +
-	"\vGetDisaster\x12\x1c.disaster.GetDisasterRequest\x1a\x1d.disaster.GetDisasterResponseB Z\x1eshared/proto/disaster;disasterb\x06proto3"
+	"\vGetDisaster\x12\x1c.disaster.GetDisasterRequest\x1a\x1d.disaster.GetDisasterResponse\x12S\n" +
+	"\x0eReviewDisaster\x12\x1f.disaster.ReviewDisasterRequest\x1a .disaster.ReviewDisasterResponseB Z\x1eshared/proto/disaster;disasterb\x06proto3"
 
 var (
 	file_disaster_proto_rawDescOnce sync.Once
@@ -500,29 +620,33 @@ func file_disaster_proto_rawDescGZIP() []byte {
 	return file_disaster_proto_rawDescData
 }
 
-var file_disaster_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_disaster_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_disaster_proto_goTypes = []any{
-	(*ReportDisasterRequest)(nil),  // 0: disaster.ReportDisasterRequest
-	(*Coordinates)(nil),            // 1: disaster.Coordinates
-	(*ReportDisasterResponse)(nil), // 2: disaster.ReportDisasterResponse
-	(*GetDisasterRequest)(nil),     // 3: disaster.GetDisasterRequest
-	(*GetDisasterResponse)(nil),    // 4: disaster.GetDisasterResponse
-	(*Resource)(nil),               // 5: disaster.Resource
-	(*timestamppb.Timestamp)(nil),  // 6: google.protobuf.Timestamp
+	(*ReviewDisasterRequest)(nil),  // 0: disaster.ReviewDisasterRequest
+	(*ReviewDisasterResponse)(nil), // 1: disaster.ReviewDisasterResponse
+	(*ReportDisasterRequest)(nil),  // 2: disaster.ReportDisasterRequest
+	(*Coordinates)(nil),            // 3: disaster.Coordinates
+	(*ReportDisasterResponse)(nil), // 4: disaster.ReportDisasterResponse
+	(*GetDisasterRequest)(nil),     // 5: disaster.GetDisasterRequest
+	(*GetDisasterResponse)(nil),    // 6: disaster.GetDisasterResponse
+	(*Resource)(nil),               // 7: disaster.Resource
+	(*timestamppb.Timestamp)(nil),  // 8: google.protobuf.Timestamp
 }
 var file_disaster_proto_depIdxs = []int32{
-	1, // 0: disaster.ReportDisasterRequest.location:type_name -> disaster.Coordinates
-	1, // 1: disaster.GetDisasterResponse.location:type_name -> disaster.Coordinates
-	6, // 2: disaster.GetDisasterResponse.createdAt:type_name -> google.protobuf.Timestamp
-	6, // 3: disaster.GetDisasterResponse.updatedAt:type_name -> google.protobuf.Timestamp
-	5, // 4: disaster.GetDisasterResponse.resources:type_name -> disaster.Resource
-	1, // 5: disaster.Resource.location:type_name -> disaster.Coordinates
-	0, // 6: disaster.DisasterService.ReportDisaster:input_type -> disaster.ReportDisasterRequest
-	3, // 7: disaster.DisasterService.GetDisaster:input_type -> disaster.GetDisasterRequest
-	2, // 8: disaster.DisasterService.ReportDisaster:output_type -> disaster.ReportDisasterResponse
-	4, // 9: disaster.DisasterService.GetDisaster:output_type -> disaster.GetDisasterResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
+	3, // 0: disaster.ReportDisasterRequest.location:type_name -> disaster.Coordinates
+	3, // 1: disaster.GetDisasterResponse.location:type_name -> disaster.Coordinates
+	8, // 2: disaster.GetDisasterResponse.createdAt:type_name -> google.protobuf.Timestamp
+	8, // 3: disaster.GetDisasterResponse.updatedAt:type_name -> google.protobuf.Timestamp
+	7, // 4: disaster.GetDisasterResponse.resources:type_name -> disaster.Resource
+	3, // 5: disaster.Resource.location:type_name -> disaster.Coordinates
+	2, // 6: disaster.DisasterService.ReportDisaster:input_type -> disaster.ReportDisasterRequest
+	5, // 7: disaster.DisasterService.GetDisaster:input_type -> disaster.GetDisasterRequest
+	0, // 8: disaster.DisasterService.ReviewDisaster:input_type -> disaster.ReviewDisasterRequest
+	4, // 9: disaster.DisasterService.ReportDisaster:output_type -> disaster.ReportDisasterResponse
+	6, // 10: disaster.DisasterService.GetDisaster:output_type -> disaster.GetDisasterResponse
+	1, // 11: disaster.DisasterService.ReviewDisaster:output_type -> disaster.ReviewDisasterResponse
+	9, // [9:12] is the sub-list for method output_type
+	6, // [6:9] is the sub-list for method input_type
 	6, // [6:6] is the sub-list for extension type_name
 	6, // [6:6] is the sub-list for extension extendee
 	0, // [0:6] is the sub-list for field type_name
@@ -539,7 +663,7 @@ func file_disaster_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_disaster_proto_rawDesc), len(file_disaster_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

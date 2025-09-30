@@ -47,5 +47,10 @@ func (dc *disasterConsumer) handleFindResources(ctx context.Context, key string,
 	// For simplicity, just log the received payload
 	log.Printf("Finding resources for disaster: %s...", payload.DisasterID)
 	// Implement logic to find and store resources in the database
+
+	// If Successful, Notify User Service to notify admin to review
+	if err := dc.kafkaClient.Produce(ctx, events.UserNotifyAdminReview, payload.DisasterID, value); err != nil {
+		return fmt.Errorf("failed to notify user service for admin review: %w", err)
+	}
 	return nil
 }

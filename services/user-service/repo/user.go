@@ -28,6 +28,7 @@ type UserRepo interface {
 	Create(ctx context.Context, user *User) (string, error)
 	GetByID(ctx context.Context, id string) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
+	GetByRole(ctx context.Context, role string) ([]*User, error)
 }
 
 // NewUserRepo creates a new instance of inMemoryUserRepo.
@@ -69,4 +70,18 @@ func (r *inMemoryUserRepo) GetByEmail(ctx context.Context, email string) (*User,
 		}
 	}
 	return nil, nil
+}
+
+// GetByRole retrieves all users with the specified role.
+func (r *inMemoryUserRepo) GetByRole(ctx context.Context, role string) ([]*User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var admins []*User
+	for _, user := range r.users {
+		if user.Role == role {
+			admins = append(admins, user)
+		}
+	}
+	return admins, nil
 }
