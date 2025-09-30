@@ -83,7 +83,7 @@ func (x *RegisterUserRequest) GetPassword() string {
 
 type RegisterUserResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserID        string                 `protobuf:"bytes,1,opt,name=userID,proto3" json:"userID,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -118,9 +118,9 @@ func (*RegisterUserResponse) Descriptor() ([]byte, []int) {
 	return file_user_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *RegisterUserResponse) GetUserID() string {
+func (x *RegisterUserResponse) GetId() string {
 	if x != nil {
-		return x.UserID
+		return x.Id
 	}
 	return ""
 }
@@ -238,9 +238,9 @@ const file_user_proto_rawDesc = "" +
 	"\x13RegisterUserRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x03 \x01(\tR\bpassword\".\n" +
-	"\x14RegisterUserResponse\x12\x16\n" +
-	"\x06userID\x18\x01 \x01(\tR\x06userID\"D\n" +
+	"\bpassword\x18\x03 \x01(\tR\bpassword\"&\n" +
+	"\x14RegisterUserResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"D\n" +
 	"\x10LoginUserRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"9\n" +

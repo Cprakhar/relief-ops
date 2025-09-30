@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: apache-kafka
+  namespace: relief-ops
+  labels:
+    app: apache-kafka
+spec:
+  serviceName: apache-kafka
+  replicas: 3
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: apache-kafka
+  template:
+    metadata:
+      labels:
+        app: apache-kafka
+    spec:
+      containers:
+        - name: apache-kafka
+          image: apache/kafka:latest
+          ports:
+            - containerPort: 9092
+              name: kafka
+            - containerPort: 9093
+              name: controller
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          command:
+            - /bin/bash
+            - -c
+            - |
+              # A unique cluster ID for KRaft mode
+              export KAFKA_CLUSTER_ID=zbkjeP3PayYPrKHlDygItaDt
+
+              # Extract node ID from the pod name
+              export KAFKA_NODE_ID=${HOSTNAME##*-}
+              
+              # Create server.properties for KRaft mode
+              cat > /tmp/server.properties << EOF
+              # KRaft mode configuration
+              process.roles=broker,controller
+              node.id=${KAFKA_NODE_ID}
+              controller.quorum.voters=0@apache-kafka-0.apache-kafka.relief-ops.svc.cluster.local:9093,1@apache-kafka-1.apache-kafka.relief-ops.svc.cluster.local:9093,2@apache-kafka-2.apache-kafka.relief-ops.svc.cluster.local:9093
+              
+              # Listeners
+              listeners=PLAINTEXT://${POD_NAME}.apache-kafka.relief-ops.svc.cluster.local:9092,CONTROLLER://${POD_NAME}.apache-kafka.relief-ops.svc.cluster.local:9093
+              advertised.listeners=PLAINTEXT://${POD_NAME}.apache-kafka.relief-ops.svc.cluster.local:9092
+              controller.listener.names=CONTROLLER
+              listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+              
+              # Log configuration
+              log.dirs=/opt/kafka/data
+              num.network.threads=3
+              num.io.threads=8
+              socket.send.buffer.bytes=102400
+              socket.receive.buffer.bytes=102400
+              socket.request.max.bytes=104857600
+              
+              # Replication settings
+              default.replication.factor=3
+              min.insync.replicas=2
+              offset.topic.replication.factor=2
+              transaction.state.log.replication.factor=2
+              transaction.state.log.min.isr=2
+              
+              # Other settings
+              num.partitions=6
+              EOF
+
+              # Format storage if not already formatted
+              if [ ! -f /opt/kafka/data/meta.properties ]; then
+                /opt/kafka/bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c /tmp/server.properties --ignore-formatted
+              fi
+              
+              # Start Kafka
+              exec /opt/kafka/bin/kafka-server-start.sh /tmp/server.properties
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /opt/kafka/data
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
+  volumeClaimTemplates:
+    - metadata:
+        name: kafka-data
+        namespace: relief-ops
+        labels:
+          app: apache-kafka
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apache-kafka
+  namespace: relief-ops
+  labels:
+    app: apache-kafka
+spec:
+  type: ClusterIP
+  clusterIP: None
+  sessionAffinity: None
+  selector:
+    app: apache-kafka
+  ports:
+    - name: kafka
+      port: 9092
+      targetPort: 9092
+    - name: controller
+      port: 9093
+      targetPort: 9093

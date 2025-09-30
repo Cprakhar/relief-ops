@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/cprakhar/relief-ops/services/disaster-service/service"
-	"github.com/cprakhar/relief-ops/services/disaster-service/types"
 	"github.com/cprakhar/relief-ops/shared/events"
 	"github.com/cprakhar/relief-ops/shared/messaging"
 	pb "github.com/cprakhar/relief-ops/shared/proto/disaster"
-	sharedTypes "github.com/cprakhar/relief-ops/shared/types"
+	"github.com/cprakhar/relief-ops/shared/types"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 )
@@ -21,18 +21,20 @@ type gRPCHandler struct {
 	kafkaClient *messaging.KafkaClient
 }
 
+// NewDisastergRPCHandler registers the gRPC handler for the DisasterService.
 func NewDisastergRPCHandler(srv *grpc.Server, svc service.DisasterService, kc *messaging.KafkaClient) {
 	handler := &gRPCHandler{svc: svc, kafkaClient: kc}
 	pb.RegisterDisasterServiceServer(srv, handler)
 }
 
+// ReportDisaster handles the reporting of a new disaster.
 func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisasterRequest) (*pb.ReportDisasterResponse, error) {
 	disaster := &types.Disaster{
 		ID:          uuid.New().String(),
 		Title:       req.GetTitle(),
 		Description: req.GetDescription(),
 		Tags:        req.GetTags(),
-		Location: sharedTypes.Coordinates{
+		Location: types.Coordinates{
 			Latitude:  req.GetLocation().GetLatitude(),
 			Longitude: req.GetLocation().GetLongitude(),
 		},
@@ -40,6 +42,7 @@ func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisaster
 		ImageURLs:     req.GetImageURLs(),
 	}
 
+	// Step 1: Create the disaster in the database
 	disasterID, err := h.svc.CreateDisaster(ctx, disaster)
 	if err != nil {
 		return nil, err
@@ -55,24 +58,22 @@ func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisaster
 	if err != nil {
 		// Compensate: Delete the created disaster
 		if deleteErr := h.svc.DeleteDisaster(ctx, disasterID); deleteErr != nil {
-			// Log the compensation failure but return the original error
-			// In production, you'd want to send this to a dead letter queue
-			// or retry mechanism
-			fmt.Printf("COMPENSATION FAILED: Could not delete disaster %s: %v\n", disasterID, deleteErr)
+			log.Printf("COMPENSATION FAILED: Could not delete disaster %s: %v\n", disasterID, deleteErr)
 		}
 		return nil, fmt.Errorf("failed to marshal disaster event payload: %w", err)
 	}
 
-	if err := h.kafkaClient.Produce(events.ResourceCommandFind, disasterID, value); err != nil {
+	// Notify resource service to find resources around the disaster location
+	if err := h.kafkaClient.Produce(ctx, events.ResourceCommandFind, disasterID, value); err != nil {
 		// Compensate: Delete the created disaster
 		if deleteErr := h.svc.DeleteDisaster(ctx, disasterID); deleteErr != nil {
-			// Log the compensation failure but return the original error
-			fmt.Printf("COMPENSATION FAILED: Could not delete disaster %s: %v\n", disasterID, deleteErr)
+			log.Printf("COMPENSATION FAILED: Could not delete disaster %s: %v\n", disasterID, deleteErr)
 		}
 		return nil, fmt.Errorf("failed to produce disaster event message: %w", err)
 	}
 
 	return &pb.ReportDisasterResponse{
-		Id: disasterID,
+		Id:     disasterID,
+		Status: "pending",
 	}, nil
 }

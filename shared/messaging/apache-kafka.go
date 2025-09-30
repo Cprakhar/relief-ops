@@ -2,9 +2,12 @@ package messaging
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/cprakhar/relief-ops/shared/tools"
 )
 
 type KafkaConfig struct {
@@ -38,7 +41,6 @@ func NewKafkaClient(serviceName string, cfg *KafkaConfig) (*KafkaClient, error) 
 		"group.id":                 cfg.GroupID,
 		"auto.offset.reset":        "earliest",
 		"enable.auto.commit":       false,
-		"group.protocol":           "CONSUMER",
 		"session.timeout.ms":       60000,
 		"allow.auto.create.topics": true,
 		"security.protocol":        "PLAINTEXT",
@@ -56,27 +58,58 @@ func NewKafkaClient(serviceName string, cfg *KafkaConfig) (*KafkaClient, error) 
 	}, nil
 }
 
-func (kc *KafkaClient) Produce(topic string, key string, value []byte) error {
+// Produce sends a message to the specified topic with retries and error handling
+func (kc *KafkaClient) Produce(ctx context.Context, topic string, key string, value []byte) error {
 	message := &kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 		Key:            []byte(key),
 		Value:          value,
 	}
-	return kc.Producer.Produce(message, nil)
+
+	// Use delivery channel to wait for confirmation
+	deliveryChan := make(chan kafka.Event, 1)
+
+	// Send the message
+	err := kc.Producer.Produce(message, deliveryChan)
+	if err != nil {
+		return err
+	}
+
+	// Wait for delivery confirmation or context cancellation
+	select {
+	case event := <-deliveryChan:
+		switch ev := event.(type) {
+		case *kafka.Message:
+			if ev.TopicPartition.Error != nil {
+				return ev.TopicPartition.Error
+			}
+			// Message delivered successfully
+			return nil
+		default:
+			return kafka.NewError(kafka.ErrUnknown, "unexpected delivery event", false)
+		}
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
+// MessageHandler defines the function signature for handling messages
 type MessageHandler func(event, key string, value []byte) error
 
+// Consume starts consuming messages from the specified topics and processes them using the provided handler
 func (kc *KafkaClient) Consume(ctx context.Context, topics []string, handler MessageHandler) error {
+	// Subscribe to topics
 	if err := kc.Consumer.SubscribeTopics(topics, nil); err != nil {
 		return err
 	}
 
+	// Ensure consumer is closed on context cancellation
 	go func() {
 		<-ctx.Done()
 		kc.Consumer.Close()
 	}()
 
+	// Poll for messages
 	for {
 		select {
 		case <-ctx.Done():
@@ -84,22 +117,58 @@ func (kc *KafkaClient) Consume(ctx context.Context, topics []string, handler Mes
 		default:
 		}
 
-		msg, err := kc.Consumer.ReadMessage(100)
-		if err.(kafka.Error).IsTimeout() {
+		event := kc.Consumer.Poll(100)
+		if event == nil {
 			continue
 		}
 
-		if err := handler(*msg.TopicPartition.Topic, string(msg.Key), msg.Value); err != nil {
-			log.Printf("Error handling message: %v", err)
-		}
+		switch ev := event.(type) {
+		case *kafka.Message:
+			// Retry handling the message with exponential backoff
+			// If it fails after retries, send to DLQ
+			retryConfig := &tools.RetryConfig{
+				MaxAttempts:   5,
+				InitialDelay:  100 * time.Millisecond,
+				MaxDelay:      5 * time.Second,
+				BackoffFactor: 2.0,
+				Jitter:        true,
+			}
 
-		_, err = kc.Consumer.CommitMessage(msg)
-		if err != nil {
-			log.Printf("Error committing message: %v", err)
+			if err := tools.RetryWithBackoff(ctx, retryConfig, func() error {
+				return handler(*ev.TopicPartition.Topic, string(ev.Key), ev.Value)
+			}); err != nil {
+				log.Printf("Error handling message after retries: %v", err)
+				// Send to Dead Letter Queue (DLQ)
+				if dlqErr := kc.DLQ(ctx, *ev.TopicPartition.Topic, string(ev.Key), ev.Value); dlqErr != nil {
+					log.Printf("CRITICAL: Failed to send message to DLQ: %v", dlqErr)
+					continue
+				}
+				log.Printf("Message sent to DLQ: topic=%s, key=%s", fmt.Sprintf("%s-DLQ", *ev.TopicPartition.Topic), string(ev.Key))
+			}
+			// Commit the message offset after processing or sending to DLQ
+			_, err := kc.Consumer.CommitMessage(ev)
+			if err != nil {
+				log.Printf("Error committing message: %v", err)
+			}
+		case kafka.Error:
+			log.Printf("Kafka error: %v", ev)
+		default:
+			// Ignore other event types
+			log.Printf("Ignored event: %v", ev)
 		}
 	}
 }
 
+// DLQ sends the message to a Dead Letter Queue topic
+func (kc *KafkaClient) DLQ(ctx context.Context, topic string, key string, value []byte) error {
+	dlqTopic := topic + "-DLQ"
+	dlqCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	return kc.Produce(dlqCtx, dlqTopic, key, value)
+}
+
+// Close cleans up the Kafka producer and consumer
 func (kc *KafkaClient) Close() {
 	kc.Producer.Close()
 	kc.Consumer.Close()

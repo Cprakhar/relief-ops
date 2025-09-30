@@ -21,3 +21,5 @@ build:
 build-all:
 	make build SERVICE_NAME=api-gateway DOCKERFILE=services/api-gateway/Dockerfile
 	make build SERVICE_NAME=user-service DOCKERFILE=services/user-service/Dockerfile
+	make build SERVICE_NAME=disaster-service DOCKERFILE=services/disaster-service/Dockerfile
+	make build SERVICE_NAME=resource-service DOCKERFILE=services/resource-service/Dockerfile

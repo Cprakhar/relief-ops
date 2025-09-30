@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resource-service
+  namespace: relief-ops
+  labels:
+    app: resource-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resource-service
+  template:
+    metadata:
+      labels:
+        app: resource-service
+    spec:
+      containers:
+        - name: resource-service
+          image: pchhalotre/relief-ops.resource-service:latest
+          ports:
+            - containerPort: 9003
+          env:
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: kafka-config
+                  key: KAFKA_BROKERS
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: resource-service
+  namespace: relief-ops
+spec:
+  type: ClusterIP
+  selector:
+    app: resource-service
+  ports:
+    - protocol: TCP
+      port: 9003
+      targetPort: 9003

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: disaster-service
+  namespace: relief-ops
+  labels:
+    app: disaster-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: disaster-service
+  template:
+    metadata:
+      labels:
+        app: disaster-service
+    spec:
+      containers:
+        - name: disaster-service
+          image: pchhalotre/relief-ops.disaster-service:latest
+          ports:
+            - containerPort: 9002
+          env:
+            - name: DISASTER_GRPC_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: api-gateway-config
+                  key: DISASTER_GRPC_ADDR
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: kafka-config
+                  key: KAFKA_BROKERS
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: disaster-service
+  namespace: relief-ops
+spec:
+  type: ClusterIP
+  selector:
+    app: disaster-service
+  ports:
+    - protocol: TCP
+      port: 9002
+      targetPort: 9002

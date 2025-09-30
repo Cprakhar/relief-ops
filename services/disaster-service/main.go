@@ -21,9 +21,11 @@ var (
 )
 
 func main() {
+	// Set up context with signal handling for graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// Initialize Kafka client
 	kafkaCfg := &messaging.KafkaConfig{
 		Brokers: brokers,
 		GroupID: "disaster-service-group",
@@ -36,9 +38,11 @@ func main() {
 	defer kafkaClient.Close()
 	log.Println("Kafka client initialized")
 
+	// Initialize repository and service
 	userRepo := repo.NewDisasterRepo()
 	userService := service.NewDisasterService(userRepo)
 
+	// Initialize and start the resource consumer
 	resourceConsumer := event.NewResourceConsumer(kafkaClient, userService)
 	topics := []string{events.DisasterCommandDelete}
 
@@ -48,16 +52,18 @@ func main() {
 		}
 	}()
 
+	// Initialize and run the gRPC server
 	gRPCServer := newgRPCServer(addr, userService, kafkaClient)
 
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		log.Printf("Server running on %s", addr)
+		log.Printf("Disaster service running on %s", addr)
 		if err := gRPCServer.run(ctx); err != nil {
 			log.Printf("gRPC server error: %v", err)
 		}
 	}()
 	<-ctx.Done()
 	<-done
+	log.Print("Disaster service stopped")
 }
