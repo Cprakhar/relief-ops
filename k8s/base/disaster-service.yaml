@@ -20,17 +20,15 @@ spec:
           image: pchhalotre/relief-ops.disaster-service:latest
           ports:
             - containerPort: 9002
-          env:
-            - name: DISASTER_GRPC_ADDR
-              valueFrom:
-                configMapKeyRef:
-                  name: api-gateway-config
-                  key: DISASTER_GRPC_ADDR
-            - name: KAFKA_BROKERS
-              valueFrom:
-                configMapKeyRef:
-                  name: kafka-config
-                  key: KAFKA_BROKERS
+          envFrom:
+            - configMapRef:
+                name: api-gateway-config
+            - configMapRef:
+                name: kafka-config
+            - configMapRef:
+                name: mongodb-config
+            - secretRef:
+                name: mongodb-secret
           resources:
             requests:
               memory: "128Mi"

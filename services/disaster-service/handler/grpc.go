@@ -3,14 +3,12 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"log"
 
 	"github.com/cprakhar/relief-ops/services/disaster-service/service"
 	"github.com/cprakhar/relief-ops/shared/events"
 	"github.com/cprakhar/relief-ops/shared/messaging"
 	pb "github.com/cprakhar/relief-ops/shared/proto/disaster"
 	"github.com/cprakhar/relief-ops/shared/types"
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -36,7 +34,6 @@ type GrpcHandler interface {
 // ReportDisaster handles the reporting of a new disaster.
 func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisasterRequest) (*pb.ReportDisasterResponse, error) {
 	disaster := &types.Disaster{
-		ID:          uuid.New().String(),
 		Title:       req.GetTitle(),
 		Description: req.GetDescription(),
 		Tags:        req.GetTags(),
@@ -58,24 +55,17 @@ func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisaster
 	msg := &events.DisasterEventCreatedPayload{
 		DisasterID:    disasterID,
 		Location:      disaster.Location,
+		Range:         10000,
 		ContributorID: disaster.ContributorID,
 	}
 
 	value, err := json.Marshal(msg)
 	if err != nil {
-		// Compensate: Delete the created disaster
-		if deleteErr := h.svc.DeleteDisaster(ctx, disasterID); deleteErr != nil {
-			log.Printf("COMPENSATION FAILED: Could not delete disaster %s: %v\n", disasterID, deleteErr)
-		}
-		return nil, status.Errorf(codes.Internal, "failed to marshal disaster event message: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to marshal event payload: %v", err)
 	}
 
 	// Notify resource service to find resources around the disaster location
 	if err := h.kafkaClient.Produce(ctx, events.ResourceCommandFind, disasterID, value); err != nil {
-		// Compensate: Delete the created disaster
-		if deleteErr := h.svc.DeleteDisaster(ctx, disasterID); deleteErr != nil {
-			log.Printf("COMPENSATION FAILED: Could not delete disaster %s: %v\n", disasterID, deleteErr)
-		}
 		return nil, status.Errorf(codes.Internal, "failed to produce resource find command: %v", err)
 	}
 
@@ -85,6 +75,7 @@ func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisaster
 	}, nil
 }
 
+// ReviewDisaster handles the review of a reported disaster.
 func (h *gRPCHandler) ReviewDisaster(ctx context.Context, req *pb.ReviewDisasterRequest) (*pb.ReviewDisasterResponse, error) {
 	if err := h.svc.UpdateStatus(ctx, req.GetId(), req.GetStatus()); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update disaster status: %v", err)

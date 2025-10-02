@@ -20,52 +20,23 @@ spec:
           image: pchhalotre/relief-ops.user-service:latest
           ports:
             - containerPort: 9001
-          env:
-            - name: KAFKA_BROKERS
-              valueFrom:
-                configMapKeyRef:
-                  name: kafka-config
-                  key: KAFKA_BROKERS
-            - name: FROM_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: sendgrid-secret
-                  key: FROM_EMAIL
-            - name: SENDGRID_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: sendgrid-secret
-                  key: SENDGRID_API_KEY
-            - name: WEB_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: api-gateway-config
-                  key: WEB_URL
-            - name: USER_GRPC_ADDR
-              valueFrom:
-                configMapKeyRef:
-                  name: api-gateway-config
-                  key: USER_GRPC_ADDR
-            - name: REDIS_ADDR
-              valueFrom:
-                configMapKeyRef:
-                  name: redis-config
-                  key: REDIS_ADDR
-            - name: REDIS_USER
-              valueFrom:
-                configMapKeyRef:
-                  name: redis-config
-                  key: REDIS_USER
-            - name: REDIS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: redis-secret
-                  key: REDIS_PASSWORD
-            - name: REDIS_DB
-              valueFrom:
-                configMapKeyRef:
-                  name: redis-config
-                  key: REDIS_DB
+          envFrom:
+            - configMapRef:
+                name: api-gateway-config
+            - configMapRef:
+                name: kafka-config
+            - configMapRef:
+                name: redis-config
+            - secretRef:
+                name: redis-secret
+            - configMapRef:
+                name: mongodb-config
+            - secretRef:
+                name: mongodb-secret
+            - secretRef:
+                name: sendgrid-secret
+            - secretRef:
+                name: jwt-secret
           resources:
             requests:
               memory: "128Mi"

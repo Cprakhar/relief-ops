@@ -11,14 +11,15 @@ import (
 )
 
 var (
-	addr = env.GetString("API_GATEWAY_ADDR", ":8080")
+	addr   = env.GetString("API_GATEWAY_ADDR", ":8080")
+	webURL = env.GetString("WEB_URL", "http://localhost:3000")
 )
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	httpServer := newHTTPServer(addr)
+	httpServer := newHTTPServer(addr, webURL)
 
 	done := make(chan struct{})
 	go func() {

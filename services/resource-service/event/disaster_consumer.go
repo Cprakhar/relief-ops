@@ -6,17 +6,19 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/cprakhar/relief-ops/services/resource-service/service"
 	"github.com/cprakhar/relief-ops/shared/events"
 	"github.com/cprakhar/relief-ops/shared/messaging"
 )
 
 type disasterConsumer struct {
 	kafkaClient *messaging.KafkaClient
+	svc         service.ResourceService
 }
 
 // NewDisasterConsumer creates a new instance of disasterConsumer.
-func NewDisasterConsumer(kc *messaging.KafkaClient) *disasterConsumer {
-	return &disasterConsumer{kafkaClient: kc}
+func NewDisasterConsumer(kc *messaging.KafkaClient, svc service.ResourceService) *disasterConsumer {
+	return &disasterConsumer{kafkaClient: kc, svc: svc}
 }
 
 // DisasterConsumer starts consuming messages from the specified topics.
@@ -25,7 +27,7 @@ func (dc *disasterConsumer) DisasterConsumer(ctx context.Context, topics []strin
 		// Handle the event based on the topic
 		switch eventType {
 		case events.ResourceCommandFind:
-			if err := dc.handleFindResources(ctx, key, value); err != nil {
+			if err := dc.handleFindResources(ctx, value); err != nil {
 				return err
 			}
 		default:
@@ -36,17 +38,17 @@ func (dc *disasterConsumer) DisasterConsumer(ctx context.Context, topics []strin
 }
 
 // handleFindResources processes the find resources command.
-func (dc *disasterConsumer) handleFindResources(ctx context.Context, key string, value []byte) error {
+func (dc *disasterConsumer) handleFindResources(ctx context.Context, value []byte) error {
 	var payload events.DisasterEventCreatedPayload
 	if err := json.Unmarshal(value, &payload); err != nil {
-		if err := dc.kafkaClient.Produce(ctx, events.DisasterCommandDelete, key, []byte(payload.DisasterID)); err != nil {
-			log.Printf("Failed to produce delete command for disaster %s: %v", payload.DisasterID, err)
-		}
-		return err
+		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 	// For simplicity, just log the received payload
 	log.Printf("Finding resources for disaster: %s...", payload.DisasterID)
-	// Implement logic to find and store resources in the database
+	if err := dc.svc.SaveResources(ctx, payload.Range, payload.Location.Latitude, payload.Location.Longitude); err != nil {
+		return fmt.Errorf("failed to save resources: %w", err)
+	}
+	log.Printf("Resources saved for disaster: %s", payload.DisasterID)
 
 	// If Successful, Notify User Service to notify admin to review
 	if err := dc.kafkaClient.Produce(ctx, events.UserNotifyAdminReview, payload.DisasterID, value); err != nil {

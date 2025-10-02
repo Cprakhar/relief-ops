@@ -11,13 +11,14 @@ import (
 )
 
 type gRPCServer struct {
-	addr string
-	svc  service.UserService
+	addr      string
+	svc       service.UserService
+	jwtSecret string
 }
 
 // newgRPCServer creates a new gRPC server instance.
-func newgRPCServer(addr string, svc service.UserService) *gRPCServer {
-	return &gRPCServer{addr: addr, svc: svc}
+func newgRPCServer(addr string, svc service.UserService, s string) *gRPCServer {
+	return &gRPCServer{addr: addr, svc: svc, jwtSecret: s}
 }
 
 // run starts the gRPC server and listens for incoming requests.
@@ -29,7 +30,7 @@ func (s *gRPCServer) run(ctx context.Context) error {
 
 	// Create a new gRPC server
 	srv := grpc.NewServer()
-	handler.NewUsergRPCHandler(srv, s.svc)
+	handler.NewUsergRPCHandler(srv, s.svc, s.jwtSecret)
 
 	// Listen for incoming requests in a separate goroutine
 	errChan := make(chan error, 1)

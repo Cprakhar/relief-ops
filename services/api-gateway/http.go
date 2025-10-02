@@ -6,21 +6,22 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cprakhar/relief-ops/services/api-gateway/handler"
+	handlerhttp "github.com/cprakhar/relief-ops/services/api-gateway/handler/http"
 )
 
 type httpServer struct {
-	addr string
+	addr   string
+	webURL string
 }
 
 // newHTTPServer creates and returns a new HTTP server.
-func newHTTPServer(addr string) *httpServer {
-	return &httpServer{addr: addr}
+func newHTTPServer(addr string, web string) *httpServer {
+	return &httpServer{addr: addr, webURL: web}
 }
 
 // run starts the HTTP server and listens for incoming requests.
 func (s *httpServer) run(ctx context.Context) error {
-	h := handler.NewHTTPUserHandler()
+	h := handlerhttp.NewHttpHandler(s.webURL)
 	srv := &http.Server{
 		Addr:    s.addr,
 		Handler: h,

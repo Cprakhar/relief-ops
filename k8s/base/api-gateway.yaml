@@ -20,17 +20,9 @@ spec:
           image: pchhalotre/relief-ops.api-gateway:latest
           ports:
             - containerPort: 8080
-          env:
-            - name: USER_GRPC_ADDR
-              valueFrom:
-                configMapKeyRef:
-                  name: api-gateway-config
-                  key: USER_GRPC_ADDR
-            - name: HTTP_ADDR
-              valueFrom:
-                configMapKeyRef:
-                  name: api-gateway-config
-                  key: HTTP_ADDR
+          envFrom:
+            - configMapRef:
+                name: api-gateway-config
           resources:
             requests:
               memory: "128Mi"

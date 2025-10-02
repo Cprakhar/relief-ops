@@ -6,24 +6,50 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	"github.com/cprakhar/relief-ops/services/disaster-service/event"
 	"github.com/cprakhar/relief-ops/services/disaster-service/repo"
 	"github.com/cprakhar/relief-ops/services/disaster-service/service"
+	"github.com/cprakhar/relief-ops/shared/db"
 	"github.com/cprakhar/relief-ops/shared/env"
-	"github.com/cprakhar/relief-ops/shared/events"
 	"github.com/cprakhar/relief-ops/shared/messaging"
 )
 
 var (
-	addr    = env.GetString("DISASTER_GRPC_ADDR", ":9002")
-	brokers = env.GetString("KAFKA_BROKERS", "apache-kafka:9092")
+	addr         = env.GetString("DISASTER_GRPC_ADDR", ":9002")
+
+	// Kafka configuration
+	brokers      = env.GetString("KAFKA_BROKERS", "apache-kafka:9092")
+
+	// MongoDB configuration
+	mongoURI     = env.GetString("MONGODB_URI", "")
+	mongoTimeout = 30 * time.Second
+	mongoMaxIdle = 5 * time.Second
+	mongoMaxPool = uint64(10)
+	mongoMinPool = uint64(2)
 )
 
 func main() {
 	// Set up context with signal handling for graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	// Initialize MongoDB client
+	mongoCfg := &db.MongoDBConfig{
+		URI:        mongoURI,
+		Database:   "relief_ops",
+		Collection: "disasters",
+		Timeout:    &mongoTimeout,
+		MaxIdle:    &mongoMaxIdle,
+		MaxPool:    &mongoMaxPool,
+		MinPool:    &mongoMinPool,
+	}
+
+	mongoClient, err := db.NewMongoDBClient(mongoCfg)
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
+	log.Println("Connected to MongoDB")
 
 	// Initialize Kafka client
 	kafkaCfg := &messaging.KafkaConfig{
@@ -39,18 +65,8 @@ func main() {
 	log.Println("Kafka client initialized")
 
 	// Initialize repository and service
-	userRepo := repo.NewDisasterRepo()
+	userRepo := repo.NewMongodbDisasterRepo(mongoClient)
 	userService := service.NewDisasterService(userRepo)
-
-	// Initialize and start the resource consumer
-	resourceConsumer := event.NewResourceConsumer(kafkaClient, userService)
-	topics := []string{events.DisasterCommandDelete}
-
-	go func() {
-		if err := resourceConsumer.Consume(ctx, topics); err != nil {
-			log.Printf("Error in resource consumer: %v", err)
-		}
-	}()
 
 	// Initialize and run the gRPC server
 	gRPCServer := newgRPCServer(addr, userService, kafkaClient)

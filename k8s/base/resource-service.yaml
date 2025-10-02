@@ -20,12 +20,13 @@ spec:
           image: pchhalotre/relief-ops.resource-service:latest
           ports:
             - containerPort: 9003
-          env:
-            - name: KAFKA_BROKERS
-              valueFrom:
-                configMapKeyRef:
-                  name: kafka-config
-                  key: KAFKA_BROKERS
+          envFrom:
+            - configMapRef:
+                name: kafka-config
+            - configMapRef:
+                name: mongodb-config
+            - secretRef:
+                name: mongodb-secret
           resources:
             requests:
               memory: "128Mi"
