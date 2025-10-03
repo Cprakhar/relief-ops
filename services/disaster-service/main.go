@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	addr         = env.GetString("DISASTER_GRPC_ADDR", ":9002")
+	addr = env.GetString("DISASTER_GRPC_ADDR", ":9002")
 
 	// Kafka configuration
-	brokers      = env.GetString("KAFKA_BROKERS", "apache-kafka:9092")
+	brokers = env.GetString("KAFKA_BROKERS", "apache-kafka:9092")
 
 	// MongoDB configuration
 	mongoURI     = env.GetString("MONGODB_URI", "")
@@ -65,7 +65,10 @@ func main() {
 	log.Println("Kafka client initialized")
 
 	// Initialize repository and service
-	userRepo := repo.NewMongodbDisasterRepo(mongoClient)
+	userRepo, err := repo.NewMongodbDisasterRepo(ctx, mongoClient)
+	if err != nil {
+		log.Fatalf("Failed to create disaster repository: %v", err)
+	}
 	userService := service.NewDisasterService(userRepo)
 
 	// Initialize and run the gRPC server

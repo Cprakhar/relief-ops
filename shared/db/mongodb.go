@@ -1,8 +1,10 @@
 package db
 
 import (
+	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -39,4 +41,12 @@ func NewMongoDBClient(cfg *MongoDBConfig) (*mongo.Collection, error) {
 
 	collection := mongodb.Database(cfg.Database).Collection(cfg.Collection)
 	return collection, nil
+}
+
+func PrimitiveToHex(id interface{}) (string, error) {
+	oid, ok := id.(bson.ObjectID)
+	if !ok {
+		return "", fmt.Errorf("invalid ObjectID type")
+	}
+	return oid.Hex(), nil
 }

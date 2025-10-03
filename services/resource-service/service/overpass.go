@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -36,13 +37,14 @@ type resourceService struct {
 
 type ResourceService interface {
 	SaveResources(ctx context.Context, rg int, lat, lon float64) error
+	GetNearbyResources(ctx context.Context, lat, lon float64, radiusMeters int) ([]*types.Resource, error)
 }
 
 func NewResourceService(r repo.ResourceRepo) *resourceService {
 	return &resourceService{repo: r}
 }
 
-func findResourcesWithinRadius(rg int, lat, lon float64) ([]*repo.Resource, error) {
+func findResourcesWithinRadius(rg int, lat, lon float64) ([]*types.Resource, error) {
 	overpassURL := "http://overpass-api.de/api/interpreter"
 
 	amenities := []string{
@@ -55,7 +57,7 @@ func findResourcesWithinRadius(rg int, lat, lon float64) ([]*repo.Resource, erro
 
 	union := strings.Join(amenities, "|")
 	query := fmt.Sprintf(`
-		[out:json];
+		[out:json][timeout:30];
 		(
 			node["amenity"~"%s"](around:%d, %f, %f);
 			way["amenity"~"%s"](around:%d, %f, %f);
@@ -74,6 +76,7 @@ func findResourcesWithinRadius(rg int, lat, lon float64) ([]*repo.Resource, erro
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
+		log.Printf("Overpass API response status: %d", res.StatusCode)
 		return nil, fmt.Errorf("overpass API returned non-200 status: %d", res.StatusCode)
 	}
 
@@ -82,7 +85,7 @@ func findResourcesWithinRadius(rg int, lat, lon float64) ([]*repo.Resource, erro
 		return nil, fmt.Errorf("failed to decode Overpass API response: %w", err)
 	}
 
-	var resources []*repo.Resource
+	var resources []*types.Resource
 	for _, element := range data.Elements {
 		var lat, lon float64
 		if element.Type == "node" {
@@ -100,12 +103,12 @@ func findResourcesWithinRadius(rg int, lat, lon float64) ([]*repo.Resource, erro
 			resourceType = element.Tags.Amenity
 		}
 
-		resource := &repo.Resource{
-			Name: element.Tags.Name,
-			Type: resourceType,
-			Location: types.Coordinates{
-				Latitude:  lat,
-				Longitude: lon,
+		resource := &types.Resource{
+			Name:        element.Tags.Name,
+			AmenityType: resourceType,
+			Location: &types.Location{
+				Type:        "Point",
+				Coordinates: []float64{lon, lat}, // Note: GeoJSON format is [longitude, latitude]
 			},
 		}
 		resources = append(resources, resource)
@@ -124,11 +127,17 @@ func (s *resourceService) SaveResources(ctx context.Context, rg int, lat, lon fl
 	}
 
 	return tools.RetryWithBackoff(ctx, retryCfg, func() error {
-		findResourcesWithinRadius(rg, lat, lon)
 		resources, err := findResourcesWithinRadius(rg, lat, lon)
 		if err != nil {
 			return err
 		}
+		log.Printf("Found %d resources from Overpass API", len(resources))
+		log.Printf("Resources: %+v", resources)
 		return s.repo.AddResources(ctx, resources)
 	})
+}
+
+// GetNearbyResources retrieves resources within a certain radius (in meters) of given coordinates.
+func (s *resourceService) GetNearbyResources(ctx context.Context, lat, lon float64, radiusMeters int) ([]*types.Resource, error) {
+	return s.repo.GetNearbyResources(ctx, lat, lon, radiusMeters)
 }

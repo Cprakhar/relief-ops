@@ -22,6 +22,7 @@ const (
 	DisasterService_ReportDisaster_FullMethodName = "/disaster.DisasterService/ReportDisaster"
 	DisasterService_GetDisaster_FullMethodName    = "/disaster.DisasterService/GetDisaster"
 	DisasterService_ReviewDisaster_FullMethodName = "/disaster.DisasterService/ReviewDisaster"
+	DisasterService_ListDisasters_FullMethodName  = "/disaster.DisasterService/ListDisasters"
 )
 
 // DisasterServiceClient is the client API for DisasterService service.
@@ -31,6 +32,7 @@ type DisasterServiceClient interface {
 	ReportDisaster(ctx context.Context, in *ReportDisasterRequest, opts ...grpc.CallOption) (*ReportDisasterResponse, error)
 	GetDisaster(ctx context.Context, in *GetDisasterRequest, opts ...grpc.CallOption) (*GetDisasterResponse, error)
 	ReviewDisaster(ctx context.Context, in *ReviewDisasterRequest, opts ...grpc.CallOption) (*ReviewDisasterResponse, error)
+	ListDisasters(ctx context.Context, in *ListDisastersRequest, opts ...grpc.CallOption) (*ListDisastersResponse, error)
 }
 
 type disasterServiceClient struct {
@@ -71,6 +73,16 @@ func (c *disasterServiceClient) ReviewDisaster(ctx context.Context, in *ReviewDi
 	return out, nil
 }
 
+func (c *disasterServiceClient) ListDisasters(ctx context.Context, in *ListDisastersRequest, opts ...grpc.CallOption) (*ListDisastersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDisastersResponse)
+	err := c.cc.Invoke(ctx, DisasterService_ListDisasters_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DisasterServiceServer is the server API for DisasterService service.
 // All implementations must embed UnimplementedDisasterServiceServer
 // for forward compatibility.
@@ -78,6 +90,7 @@ type DisasterServiceServer interface {
 	ReportDisaster(context.Context, *ReportDisasterRequest) (*ReportDisasterResponse, error)
 	GetDisaster(context.Context, *GetDisasterRequest) (*GetDisasterResponse, error)
 	ReviewDisaster(context.Context, *ReviewDisasterRequest) (*ReviewDisasterResponse, error)
+	ListDisasters(context.Context, *ListDisastersRequest) (*ListDisastersResponse, error)
 	mustEmbedUnimplementedDisasterServiceServer()
 }
 
@@ -96,6 +109,9 @@ func (UnimplementedDisasterServiceServer) GetDisaster(context.Context, *GetDisas
 }
 func (UnimplementedDisasterServiceServer) ReviewDisaster(context.Context, *ReviewDisasterRequest) (*ReviewDisasterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReviewDisaster not implemented")
+}
+func (UnimplementedDisasterServiceServer) ListDisasters(context.Context, *ListDisastersRequest) (*ListDisastersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListDisasters not implemented")
 }
 func (UnimplementedDisasterServiceServer) mustEmbedUnimplementedDisasterServiceServer() {}
 func (UnimplementedDisasterServiceServer) testEmbeddedByValue()                         {}
@@ -172,6 +188,24 @@ func _DisasterService_ReviewDisaster_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DisasterService_ListDisasters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDisastersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DisasterServiceServer).ListDisasters(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DisasterService_ListDisasters_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DisasterServiceServer).ListDisasters(ctx, req.(*ListDisastersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DisasterService_ServiceDesc is the grpc.ServiceDesc for DisasterService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +224,10 @@ var DisasterService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReviewDisaster",
 			Handler:    _DisasterService_ReviewDisaster_Handler,
+		},
+		{
+			MethodName: "ListDisasters",
+			Handler:    _DisasterService_ListDisasters_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -27,16 +27,18 @@ func NewHttpHandler(webURLs string) *gin.Engine {
 	r.GET("/health", HealthCheckHandler)
 
 	// Admin endpoints
-	r.POST("/admin/review/:id", middleware.JWTAuthMiddleware, ReviewDisasterHandler)
+	r.POST("/admin/review/:id", middleware.JWTAuthMiddleware, middleware.AdminOnlyMiddleware, ReviewDisasterHandler)
 
 	// User endpoints
 	r.POST("/users/register", RegisterUserHandler)
 	r.POST("/users/login", LoginUserHandler)
+	r.GET("/users/me", middleware.JWTAuthMiddleware, GetCurrentUserHandler)
 
 	// Disaster endpoints
 	r.POST("/disasters", middleware.JWTAuthMiddleware, ReportDisasterHandler)
 	r.GET("/disasters", GetAllDisastersHandler)
-	r.GET("/disasters/:id", GetDisasterByIDHandler)
+	r.GET("/disasters/:id", GetDisasterHandler)
+	r.GET("/disasters/:id/resources", GetDisasterWithResourcesHandler)
 	return r
 }
 

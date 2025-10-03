@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cprakhar/relief-ops/shared/db"
 	"github.com/cprakhar/relief-ops/shared/types"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var (
@@ -25,8 +28,23 @@ type DisasterRepo interface {
 }
 
 // NewMongodbDisasterRepo creates a new instance of mongodbDisasterRepo.
-func NewMongodbDisasterRepo(db *mongo.Collection) *mongodbDisasterRepo {
-	return &mongodbDisasterRepo{db: db}
+func NewMongodbDisasterRepo(ctx context.Context, db *mongo.Collection) (DisasterRepo, error) {
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeout)
+	defer cancel()
+
+	ttlIndexModel := mongo.IndexModel{
+		Keys: bson.D{{Key: "created_at", Value: 1}},
+		Options: options.Index().
+			SetExpireAfterSeconds(3600 * 24 * 30). // 30 days
+			SetName("created_at_ttl"),
+	}
+
+	_, err := db.Indexes().CreateOne(ctx, ttlIndexModel)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create indexes: %v", err)
+	}
+
+	return &mongodbDisasterRepo{db: db}, nil
 }
 
 // Create creates a new disaster entry.
@@ -44,7 +62,7 @@ func (r *mongodbDisasterRepo) Create(ctx context.Context, disaster *types.Disast
 		return "", err
 	}
 
-	return res.InsertedID.(string), nil
+	return db.PrimitiveToHex(res.InsertedID)
 }
 
 // Delete deletes a disaster entry by its ID.
@@ -52,7 +70,11 @@ func (r *mongodbDisasterRepo) Delete(ctx context.Context, disasterID string) err
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeout)
 	defer cancel()
 
-	res := r.db.FindOneAndDelete(ctx, map[string]string{"_id": disasterID})
+	filter := bson.M{
+		"_id": disasterID,
+	}
+
+	res := r.db.FindOneAndDelete(ctx, filter)
 	switch res.Err() {
 	case mongo.ErrNoDocuments:
 		return fmt.Errorf("record not found")
@@ -66,14 +88,18 @@ func (r *mongodbDisasterRepo) UpdateStatus(ctx context.Context, disasterID, stat
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeout)
 	defer cancel()
 
-	update := map[string]any{
-		"$set": map[string]any{
+	update := bson.M{
+		"$set": bson.M{
 			"status":     status,
 			"updated_at": time.Now(),
 		},
 	}
 
-	res := r.db.FindOneAndUpdate(ctx, map[string]string{"_id": disasterID}, update)
+	filter := bson.M{
+		"_id": disasterID,
+	}
+
+	res := r.db.FindOneAndUpdate(ctx, filter, update)
 	switch res.Err() {
 	case mongo.ErrNoDocuments:
 		return fmt.Errorf("record not found")

@@ -8,10 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	CookieName = "auth_token"
-)
+const CookieName = "auth_token"
 
+// JWTAuthMiddleware validates JWT tokens from cookies and sets user info in context.
 func JWTAuthMiddleware(ctx *gin.Context) {
 	cookie, err := ctx.Cookie(CookieName)
 	if err != nil || cookie == "" {
@@ -41,7 +40,17 @@ func JWTAuthMiddleware(ctx *gin.Context) {
 
 	ctx.Set("user_id", user.GetId())
 	ctx.Set("role", user.GetRole())
-	ctx.Set("email", user.GetEmail())
+
+	ctx.Next()
+}
+
+// AdminOnlyMiddleware ensures that the user has an admin role.
+func AdminOnlyMiddleware(ctx *gin.Context) {
+	role := ctx.GetString("role")
+	if role != "admin" {
+		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden: Admins only"})
+		return
+	}
 
 	ctx.Next()
 }

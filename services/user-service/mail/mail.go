@@ -3,7 +3,7 @@ package mail
 import (
 	"embed"
 
-	"github.com/cprakhar/relief-ops/services/user-service/repo"
+	"github.com/cprakhar/relief-ops/shared/types"
 )
 
 const (
@@ -17,5 +17,5 @@ var FS embed.FS
 
 type Client interface {
 	Send(templateFile, username, email string, data any, isSandbox bool) (int, error)
-	SpamMail(users []*repo.User, data any, isSandbox bool) error
+	SpamMail(users []*types.User, data any, isSandbox bool) error
 }

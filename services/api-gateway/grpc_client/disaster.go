@@ -29,6 +29,6 @@ func NewDisasterServiceClient() (*disasterServiceClient, error) {
 }
 
 // Close closes the gRPC connection.
-func (usc *disasterServiceClient) Close() error {
-	return usc.conn.Close()
+func (dsc *disasterServiceClient) Close() error {
+	return dsc.conn.Close()
 }

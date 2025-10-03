@@ -98,7 +98,10 @@ func main() {
 	mailer := mail.NewSendGrid(fromEmail, sendGridAPIKey)
 
 	// Initialize repository and service
-	userRepo := repo.NewUserRepo(mongoClient)
+	userRepo, err := repo.NewUserRepo(ctx, mongoClient)
+	if err != nil {
+		log.Fatalf("Failed to create user repository: %v", err)
+	}
 	userService := service.NewUserService(userRepo, jwtSecret, jwtExpiry)
 
 	// Initialize and start the disaster consumer

@@ -3,9 +3,9 @@ package handler
 import (
 	"context"
 
-	"github.com/cprakhar/relief-ops/services/user-service/repo"
 	"github.com/cprakhar/relief-ops/services/user-service/service"
 	pb "github.com/cprakhar/relief-ops/shared/proto/user"
+	"github.com/cprakhar/relief-ops/shared/types"
 	"github.com/cprakhar/relief-ops/shared/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -33,7 +33,7 @@ func (h *gRPCHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 	password := req.GetPassword()
 	name := req.GetName()
 
-	user := &repo.User{
+	user := &types.User{
 		Name:     name,
 		Email:    email,
 		Password: password,
@@ -63,11 +63,28 @@ func (h *gRPCHandler) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 	return &pb.LoginUserResponse{
 		Token: token,
 		User: &pb.User{
-			Id:    user.ID,
+			Id:    user.ID.Hex(),
 			Name:  user.Name,
 			Email: user.Email,
 			Role:  user.Role,
 		},
+	}, nil
+}
+
+func (h *gRPCHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
+	userID := req.GetId()
+
+	user, err := h.svc.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)
+	}
+
+	return &pb.User{
+		Id:        user.ID.Hex(),
+		Name:      user.Name,
+		Email:     user.Email,
+		Role:      user.Role,
+		AvatarUrl: user.AvatarURL,
 	}, nil
 }
 

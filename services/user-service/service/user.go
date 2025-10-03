@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cprakhar/relief-ops/services/user-service/repo"
+	"github.com/cprakhar/relief-ops/shared/types"
 	"github.com/cprakhar/relief-ops/shared/util"
 )
 
@@ -26,9 +26,10 @@ type userService struct {
 
 // UserService defines the interface for user service operations.
 type UserService interface {
-	CreateUser(ctx context.Context, user *repo.User) (string, error)
-	Login(ctx context.Context, email, password string) (*repo.User, string, error)
-	GetAdmins(ctx context.Context) ([]*repo.User, error)
+	CreateUser(ctx context.Context, user *types.User) (string, error)
+	Login(ctx context.Context, email, password string) (*types.User, string, error)
+	GetUserByID(ctx context.Context, id string) (*types.User, error)
+	GetAdmins(ctx context.Context) ([]*types.User, error)
 }
 
 // NewUserService creates a new instance of userService.
@@ -37,13 +38,7 @@ func NewUserService(r repo.UserRepo, secret string, expiry time.Duration) UserSe
 }
 
 // CreateUser creates a new user entry.
-func (s *userService) CreateUser(ctx context.Context, user *repo.User) (string, error) {
-	// Fetch if user already exists
-	existingUser, err := s.repo.GetByEmail(ctx, user.Email)
-	if err == nil || existingUser != nil {
-		return "", fmt.Errorf("user already exists with email %s", user.Email)
-	}
-
+func (s *userService) CreateUser(ctx context.Context, user *types.User) (string, error) {
 	// Hash the password before storing
 	hashedPassword, err := util.EncryptPassword(user.Password)
 	if err != nil {
@@ -55,12 +50,12 @@ func (s *userService) CreateUser(ctx context.Context, user *repo.User) (string, 
 }
 
 // GetAdmins retrieves all users with the admin role.
-func (s *userService) GetAdmins(ctx context.Context) ([]*repo.User, error) {
+func (s *userService) GetAdmins(ctx context.Context) ([]*types.User, error) {
 	return s.repo.GetAllByRole(ctx, AdminRole)
 }
 
 // Login authenticates a user and returns a JWT token upon successful authentication.
-func (s *userService) Login(ctx context.Context, email, password string) (*repo.User, string, error) {
+func (s *userService) Login(ctx context.Context, email, password string) (*types.User, string, error) {
 	user, err := s.repo.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, "", err
@@ -71,7 +66,7 @@ func (s *userService) Login(ctx context.Context, email, password string) (*repo.
 	}
 
 	userDetails := &util.UserDetails{
-		UserID: user.ID,
+		UserID: user.ID.Hex(),
 		Email:  user.Email,
 		Role:   user.Role,
 	}
@@ -82,4 +77,9 @@ func (s *userService) Login(ctx context.Context, email, password string) (*repo.
 	}
 
 	return user, token, nil
+}
+
+// GetUserByID retrieves a user by their ID.
+func (s *userService) GetUserByID(ctx context.Context, id string) (*types.User, error) {
+	return s.repo.GetByID(ctx, id)
 }

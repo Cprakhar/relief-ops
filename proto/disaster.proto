@@ -10,6 +10,15 @@ service DisasterService {
     rpc ReportDisaster (ReportDisasterRequest) returns (ReportDisasterResponse);
     rpc GetDisaster (GetDisasterRequest) returns (GetDisasterResponse);
     rpc ReviewDisaster (ReviewDisasterRequest) returns (ReviewDisasterResponse);
+    rpc ListDisasters (ListDisastersRequest) returns (ListDisastersResponse);
+}
+
+message ListDisastersRequest {
+    string status = 1;
+}
+
+message ListDisastersResponse {
+    repeated GetDisasterResponse disasters = 1;
 }
 
 message ReviewDisasterRequest {

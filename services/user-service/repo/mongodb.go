@@ -2,25 +2,21 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/cprakhar/relief-ops/shared/db"
+	types "github.com/cprakhar/relief-ops/shared/types"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var (
-	QueryTimeout = 5 * time.Second
+	QueryTimeout        = 5 * time.Second
+	ErrResourceConflict = fmt.Errorf("resource already exists")
+	ErrNoResourcesFound = fmt.Errorf("no resources found")
 )
-
-type User struct {
-	ID        string    `json:"id" bson:"_id,omitempty"`
-	Name      string    `json:"name" bson:"name"`
-	Email     string    `json:"email" bson:"email"`
-	Password  string    `json:"-" bson:"password"`
-	AvatarURL string    `json:"avatar_url,omitempty" bson:"avatar_url,omitempty"`
-	Role      string    `json:"role" bson:"role"`
-	CreatedAt time.Time `json:"created_at" bson:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" bson:"updated_at"`
-}
 
 // mongodbUserRepo is a simple in-memory implementation of UserRepo. (later switch with postgres)
 type mongodbUserRepo struct {
@@ -29,41 +25,62 @@ type mongodbUserRepo struct {
 
 // UserRepo defines the interface for user repository operations.
 type UserRepo interface {
-	Create(ctx context.Context, user *User) (string, error)
-	GetByID(ctx context.Context, id string) (*User, error)
-	GetByEmail(ctx context.Context, email string) (*User, error)
-	GetAllByRole(ctx context.Context, role string) ([]*User, error)
+	Create(ctx context.Context, user *types.User) (string, error)
+	GetByID(ctx context.Context, id string) (*types.User, error)
+	GetByEmail(ctx context.Context, email string) (*types.User, error)
+	GetAllByRole(ctx context.Context, role string) ([]*types.User, error)
 }
 
 // NewUserRepo creates a new instance of inMemoryUserRepo.
-func NewUserRepo(db *mongo.Collection) UserRepo {
-	return &mongodbUserRepo{db: db}
+func NewUserRepo(ctx context.Context, db *mongo.Collection) (UserRepo, error) {
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeout)
+	defer cancel()
+
+	indexModel := mongo.IndexModel{
+		Keys:    bson.D{{Key: "email", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	}
+
+	if _, err := db.Indexes().CreateOne(ctx, indexModel); err != nil {
+		return nil, err
+	}
+
+	return &mongodbUserRepo{db: db}, nil
 }
 
 // Create adds a new user to the repository.
-func (r *mongodbUserRepo) Create(ctx context.Context, user *User) (string, error) {
+func (r *mongodbUserRepo) Create(ctx context.Context, user *types.User) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeout)
 	defer cancel()
 
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
-	user.Role = "contributor" // default role
+	if user.Role == "" {
+		user.Role = "contributor" // default role
+	}
 
 	res, err := r.db.InsertOne(ctx, user)
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return "", ErrResourceConflict
+		}
 		return "", err
 	}
 
-	return res.InsertedID.(string), nil
+	return db.PrimitiveToHex(res.InsertedID)
 }
 
 // GetByID retrieves a user by their ID.
-func (r *mongodbUserRepo) GetByID(ctx context.Context, id string) (*User, error) {
+func (r *mongodbUserRepo) GetByID(ctx context.Context, id string) (*types.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeout)
 	defer cancel()
 
-	var user User
-	err := r.db.FindOne(ctx, map[string]string{"_id": id}).Decode(&user)
+	var user types.User
+	filter := bson.M{
+		"_id": id,
+	}
+
+	err := r.db.FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
@@ -71,20 +88,25 @@ func (r *mongodbUserRepo) GetByID(ctx context.Context, id string) (*User, error)
 }
 
 // GetByEmail retrieves a user by their email.
-func (r *mongodbUserRepo) GetByEmail(ctx context.Context, email string) (*User, error) {
+func (r *mongodbUserRepo) GetByEmail(ctx context.Context, email string) (*types.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeout)
 	defer cancel()
 
-	var user User
+	var user types.User
 	err := r.db.FindOne(ctx, map[string]string{"email": email}).Decode(&user)
 	if err != nil {
-		return nil, err
+		switch err {
+		case mongo.ErrNoDocuments:
+			return nil, fmt.Errorf("no user found")
+		default:
+			return nil, err
+		}
 	}
 	return &user, nil
 }
 
 // GetAllByRole retrieves all users with the specified role.
-func (r *mongodbUserRepo) GetAllByRole(ctx context.Context, role string) ([]*User, error) {
+func (r *mongodbUserRepo) GetAllByRole(ctx context.Context, role string) ([]*types.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeout)
 	defer cancel()
 
@@ -94,9 +116,9 @@ func (r *mongodbUserRepo) GetAllByRole(ctx context.Context, role string) ([]*Use
 	}
 	defer cursor.Close(ctx)
 
-	var users []*User
+	var users []*types.User
 	for cursor.Next(ctx) {
-		var user User
+		var user types.User
 		if err := cursor.Decode(&user); err != nil {
 			return nil, err
 		}

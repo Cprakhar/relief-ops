@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"log"
 
 	"github.com/cprakhar/relief-ops/services/disaster-service/service"
 	"github.com/cprakhar/relief-ops/shared/events"
@@ -68,6 +69,7 @@ func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisaster
 	if err := h.kafkaClient.Produce(ctx, events.ResourceCommandFind, disasterID, value); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to produce resource find command: %v", err)
 	}
+	log.Printf("Message delivered to resource-service with disasterID %s", disasterID)
 
 	return &pb.ReportDisasterResponse{
 		Id:     disasterID,

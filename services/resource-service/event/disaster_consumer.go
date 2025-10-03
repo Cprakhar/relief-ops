@@ -54,5 +54,6 @@ func (dc *disasterConsumer) handleFindResources(ctx context.Context, value []byt
 	if err := dc.kafkaClient.Produce(ctx, events.UserNotifyAdminReview, payload.DisasterID, value); err != nil {
 		return fmt.Errorf("failed to notify user service for admin review: %w", err)
 	}
+	log.Printf("Notified user-service for admin review with disasterID %s", payload.DisasterID)
 	return nil
 }

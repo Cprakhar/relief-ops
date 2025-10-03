@@ -4,9 +4,10 @@ metadata:
   name: api-gateway-config
   namespace: relief-ops
 data:
-  USER_GRPC_ADDR: :9001
   HTTP_ADDR: :8080
+  USER_GRPC_ADDR: :9001
   DISASTER_GRPC_ADDR: :9002
+  RESOURCE_GRPC_ADDR: :9003
   WEB_URL: http://localhost:3000
 ---
 apiVersion: v1

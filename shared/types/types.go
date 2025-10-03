@@ -2,6 +2,8 @@ package types
 
 import (
 	"time"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 const (
@@ -18,14 +20,39 @@ type Coordinates struct {
 }
 
 type Disaster struct {
-	ID            string      `json:"id" bson:"_id,omitempty"`
-	Title         string      `json:"title" bson:"title"`
-	Description   string      `json:"description" bson:"description"`
-	Tags          []string    `json:"tags" bson:"tags"`
-	ContributorID string      `json:"contributor_id" bson:"contributor_id"`
-	CreatedAt     time.Time   `json:"created_at" bson:"created_at"`
-	UpdatedAt     time.Time   `json:"updated_at" bson:"updated_at"`
-	ImageURLs     []string    `json:"image_urls" bson:"image_urls"`
-	Location      Coordinates `json:"location" bson:"location"`
-	Status        string      `json:"status" bson:"status"`
+	ID            bson.ObjectID `json:"id" bson:"_id,omitempty"`
+	Title         string        `json:"title" bson:"title"`
+	Description   string        `json:"description" bson:"description"`
+	Tags          []string      `json:"tags" bson:"tags"`
+	ContributorID string        `json:"contributor_id" bson:"contributor_id"`
+	CreatedAt     time.Time     `json:"created_at" bson:"created_at"`
+	UpdatedAt     time.Time     `json:"updated_at" bson:"updated_at"`
+	ImageURLs     []string      `json:"image_urls" bson:"image_urls"`
+	Location      Coordinates   `json:"location" bson:"location"`
+	Status        string        `json:"status" bson:"status"`
+}
+
+type User struct {
+	ID        bson.ObjectID `json:"id" bson:"_id,omitempty"`
+	Name      string        `json:"name" bson:"name"`
+	Email     string        `json:"email" bson:"email"`
+	Password  string        `json:"-" bson:"password"`
+	AvatarURL string        `json:"avatar_url,omitempty" bson:"avatar_url,omitempty"`
+	Role      string        `json:"role" bson:"role"`
+	CreatedAt time.Time     `json:"created_at" bson:"created_at"`
+	UpdatedAt time.Time     `json:"updated_at" bson:"updated_at"`
+}
+
+type Resource struct {
+	ID          bson.ObjectID `json:"id" bson:"_id,omitempty"`
+	Name        string        `json:"name" bson:"name"`
+	AmenityType string        `json:"amenity_type" bson:"amenity_type"` // e.g., amentiy type
+	Location    *Location     `json:"location" bson:"location"`
+	CreatedAt   time.Time     `json:"created_at" bson:"created_at"`
+	UpdatedAt   time.Time     `json:"updated_at" bson:"updated_at"`
+}
+
+type Location struct {
+	Type        string    `json:"type" bson:"type"`               // e.g., "Point"
+	Coordinates []float64 `json:"coordinates" bson:"coordinates"` // [longitude, latitude]
 }

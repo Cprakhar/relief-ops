@@ -7,8 +7,8 @@ import (
 	"html/template"
 	"time"
 
-	"github.com/cprakhar/relief-ops/services/user-service/repo"
 	"github.com/cprakhar/relief-ops/shared/tools"
+	"github.com/cprakhar/relief-ops/shared/types"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
@@ -80,7 +80,7 @@ func (s *SendGridMailer) Send(templateFile, name, email string, data any, isSand
 }
 
 // SpamMail sends the same email to multiple users.
-func (s *SendGridMailer) SpamMail(users []*repo.User, data any, isSandbox bool) error {
+func (s *SendGridMailer) SpamMail(users []*types.User, data any, isSandbox bool) error {
 	var err error
 	for _, user := range users {
 		_, err = s.Send(AdminNotifyTemplate, user.Name, user.Email, data, isSandbox)

@@ -65,7 +65,10 @@ func main() {
 	defer kafkaClient.Close()
 	log.Println("Kafka client initialized")
 
-	resourceRepo := repo.NewResourceRepo(mongoClient)
+	resourceRepo, err := repo.NewResourceRepo(ctx, mongoClient)
+	if err != nil {
+		log.Fatalf("Failed to create resource repository: %v", err)
+	}
 	resourceService := service.NewResourceService(resourceRepo)
 
 	// Initialize and start the disaster consumer
