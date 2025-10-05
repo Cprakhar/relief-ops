@@ -23,22 +23,26 @@ func NewHttpHandler(webURLs string) *gin.Engine {
 		AllowCredentials: true,
 	}))
 
+	apiGroup := r.Group("/api")
 	// Health check endpoint
-	r.GET("/health", HealthCheckHandler)
+	apiGroup.GET("/health", HealthCheckHandler)
 
 	// Admin endpoints
-	r.POST("/admin/review/:id", middleware.JWTAuthMiddleware, middleware.AdminOnlyMiddleware, ReviewDisasterHandler)
+	apiGroup.POST("/admin/review/:id", middleware.JWTAuthMiddleware, middleware.AdminOnlyMiddleware, ReviewDisasterHandler)
 
 	// User endpoints
-	r.POST("/users/register", RegisterUserHandler)
-	r.POST("/users/login", LoginUserHandler)
-	r.GET("/users/me", middleware.JWTAuthMiddleware, GetCurrentUserHandler)
+	apiGroup.POST("/auth/signup", RegisterUserHandler)
+	apiGroup.POST("/auth/login", LoginUserHandler)
+	apiGroup.POST("/auth/oauth/signin", OAuthSignInHandler)
+	apiGroup.POST("/auth/oauth/callback", OAuthCallbackHandler)
+	apiGroup.POST("/auth/logout", LogoutUserHandler)
+	apiGroup.GET("/users/me", middleware.JWTAuthMiddleware, GetCurrentUserHandler)
 
 	// Disaster endpoints
-	r.POST("/disasters", middleware.JWTAuthMiddleware, ReportDisasterHandler)
-	r.GET("/disasters", GetAllDisastersHandler)
-	r.GET("/disasters/:id", GetDisasterHandler)
-	r.GET("/disasters/:id/resources", GetDisasterWithResourcesHandler)
+	apiGroup.POST("/disasters", middleware.JWTAuthMiddleware, ReportDisasterHandler)
+	apiGroup.GET("/disasters", GetAllDisastersHandler)
+	apiGroup.GET("/disasters/:id", GetDisasterHandler)
+	apiGroup.GET("/disasters/:id/resources", GetDisasterWithResourcesHandler)
 	return r
 }
 

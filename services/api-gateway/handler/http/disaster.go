@@ -34,12 +34,12 @@ func ReportDisasterHandler(ctx *gin.Context) {
 	defer disasterClient.Close()
 
 	pbReq := &pbd.ReportDisasterRequest{
-		Title:         req.Title,
-		Description:   req.Description,
-		Tags:          req.Tags,
-		Location:      &pbd.Coordinates{Latitude: req.Location.Latitude, Longitude: req.Location.Longitude},
-		ContributorID: userID,
-		ImageURLs:     req.ImageURLs,
+		Title:       req.Title,
+		Description: req.Description,
+		Tags:        req.Tags,
+		Location:    &pbd.Coordinates{Latitude: req.Location.Latitude, Longitude: req.Location.Longitude},
+		VolunteerID: userID,
+		ImageURLs:   req.ImageURLs,
 	}
 
 	pbRes, err := disasterClient.Client.ReportDisaster(ctx, pbReq)
@@ -107,14 +107,14 @@ func GetAllDisastersHandler(ctx *gin.Context) {
 	for _, d := range pbRes.GetDisasters() {
 		oid, _ := bson.ObjectIDFromHex(d.GetId())
 		disaster := types.Disaster{
-			ID:            oid,
-			Title:         d.GetTitle(),
-			Description:   d.GetDescription(),
-			Tags:          d.GetTags(),
-			ContributorID: d.GetContributorID(),
-			CreatedAt:     d.GetCreatedAt().AsTime(),
-			UpdatedAt:     d.GetUpdatedAt().AsTime(),
-			ImageURLs:     d.GetImageURLs(),
+			ID:          oid,
+			Title:       d.GetTitle(),
+			Description: d.GetDescription(),
+			Tags:        d.GetTags(),
+			VolunteerID: d.GetVolunteerID(),
+			CreatedAt:   d.GetCreatedAt().AsTime(),
+			UpdatedAt:   d.GetUpdatedAt().AsTime(),
+			ImageURLs:   d.GetImageURLs(),
 			Location: types.Coordinates{
 				Latitude:  d.GetLocation().GetLatitude(),
 				Longitude: d.GetLocation().GetLongitude(),
@@ -146,14 +146,14 @@ func GetDisasterHandler(ctx *gin.Context) {
 
 	oid, _ := bson.ObjectIDFromHex(pbRes.GetId())
 	disaster := &types.Disaster{
-		ID:            oid,
-		Title:         pbRes.GetTitle(),
-		Description:   pbRes.GetDescription(),
-		Tags:          pbRes.GetTags(),
-		ContributorID: pbRes.GetContributorID(),
-		CreatedAt:     pbRes.GetCreatedAt().AsTime(),
-		UpdatedAt:     pbRes.GetUpdatedAt().AsTime(),
-		ImageURLs:     pbRes.GetImageURLs(),
+		ID:          oid,
+		Title:       pbRes.GetTitle(),
+		Description: pbRes.GetDescription(),
+		Tags:        pbRes.GetTags(),
+		VolunteerID: pbRes.GetVolunteerID(),
+		CreatedAt:   pbRes.GetCreatedAt().AsTime(),
+		UpdatedAt:   pbRes.GetUpdatedAt().AsTime(),
+		ImageURLs:   pbRes.GetImageURLs(),
 		Location: types.Coordinates{
 			Latitude:  pbRes.GetLocation().GetLatitude(),
 			Longitude: pbRes.GetLocation().GetLongitude(),
@@ -182,14 +182,14 @@ func GetDisasterWithResourcesHandler(ctx *gin.Context) {
 
 	oid, _ := bson.ObjectIDFromHex(pbRes.GetId())
 	disaster := &types.Disaster{
-		ID:            oid,
-		Title:         pbRes.GetTitle(),
-		Description:   pbRes.GetDescription(),
-		Tags:          pbRes.GetTags(),
-		ContributorID: pbRes.GetContributorID(),
-		CreatedAt:     pbRes.GetCreatedAt().AsTime(),
-		UpdatedAt:     pbRes.GetUpdatedAt().AsTime(),
-		ImageURLs:     pbRes.GetImageURLs(),
+		ID:          oid,
+		Title:       pbRes.GetTitle(),
+		Description: pbRes.GetDescription(),
+		Tags:        pbRes.GetTags(),
+		VolunteerID: pbRes.GetVolunteerID(),
+		CreatedAt:   pbRes.GetCreatedAt().AsTime(),
+		UpdatedAt:   pbRes.GetUpdatedAt().AsTime(),
+		ImageURLs:   pbRes.GetImageURLs(),
 		Location: types.Coordinates{
 			Latitude:  pbRes.GetLocation().GetLatitude(),
 			Longitude: pbRes.GetLocation().GetLongitude(),

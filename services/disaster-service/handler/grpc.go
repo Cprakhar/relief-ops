@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type gRPCHandler struct {
@@ -28,6 +29,8 @@ func NewDisastergRPCHandler(srv *grpc.Server, svc service.DisasterService, kc *m
 }
 
 type GrpcHandler interface {
+	ListDisasters(ctx context.Context, req *pb.ListDisastersRequest) (*pb.ListDisastersResponse, error)
+	GetDisaster(ctx context.Context, req *pb.GetDisasterRequest) (*pb.GetDisasterResponse, error)
 	ReportDisaster(ctx context.Context, req *pb.ReportDisasterRequest) (*pb.ReportDisasterResponse, error)
 	ReviewDisaster(ctx context.Context, req *pb.ReviewDisasterRequest) (*pb.ReviewDisasterResponse, error)
 }
@@ -42,8 +45,8 @@ func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisaster
 			Latitude:  req.GetLocation().GetLatitude(),
 			Longitude: req.GetLocation().GetLongitude(),
 		},
-		ContributorID: req.GetContributorID(),
-		ImageURLs:     req.GetImageURLs(),
+		VolunteerID: req.GetVolunteerID(),
+		ImageURLs:   req.GetImageURLs(),
 	}
 
 	// Step 1: Create the disaster in the database
@@ -54,10 +57,10 @@ func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisaster
 
 	// Step 2: Try to publish to Kafka with compensation logic
 	msg := &events.DisasterEventCreatedPayload{
-		DisasterID:    disasterID,
-		Location:      disaster.Location,
-		Range:         10000,
-		ContributorID: disaster.ContributorID,
+		DisasterID:  disasterID,
+		Location:    disaster.Location,
+		Range:       10000,
+		VolunteerID: disaster.VolunteerID,
 	}
 
 	value, err := json.Marshal(msg)
@@ -75,6 +78,60 @@ func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisaster
 		Id:     disasterID,
 		Status: "pending",
 	}, nil
+}
+
+// GetDisaster retrieves a disaster by its ID.
+func (h *gRPCHandler) GetDisaster(ctx context.Context, req *pb.GetDisasterRequest) (*pb.GetDisasterResponse, error) {
+	disasterID := req.GetId()
+	disaster, err := h.svc.GetDisaster(ctx, disasterID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get disaster: %v", err)
+	}
+
+	return &pb.GetDisasterResponse{
+		Id:          disaster.ID.Hex(),
+		Title:       disaster.Title,
+		Description: disaster.Description,
+		Tags:        disaster.Tags,
+		VolunteerID: disaster.VolunteerID,
+		CreatedAt:   timestamppb.New(disaster.CreatedAt),
+		UpdatedAt:   timestamppb.New(disaster.UpdatedAt),
+		ImageURLs:   disaster.ImageURLs,
+		Location: &pb.Coordinates{
+			Latitude:  disaster.Location.Latitude,
+			Longitude: disaster.Location.Longitude,
+		},
+		Status: disaster.Status,
+	}, nil
+}
+
+// ListDisasters retrieves all disasters, optionally filtered by status.
+func (h *gRPCHandler) ListDisasters(ctx context.Context, req *pb.ListDisastersRequest) (*pb.ListDisastersResponse, error) {
+	disasters, err := h.svc.GetAllDisasters(ctx, req.GetStatus())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to list disasters: %v", err)
+	}
+
+	var pbDisasters []*pb.GetDisasterResponse
+	for _, d := range disasters {
+		pbDisasters = append(pbDisasters, &pb.GetDisasterResponse{
+			Id:          d.ID.Hex(),
+			Title:       d.Title,
+			Description: d.Description,
+			Tags:        d.Tags,
+			VolunteerID: d.VolunteerID,
+			CreatedAt:   timestamppb.New(d.CreatedAt),
+			UpdatedAt:   timestamppb.New(d.UpdatedAt),
+			ImageURLs:   d.ImageURLs,
+			Location: &pb.Coordinates{
+				Latitude:  d.Location.Latitude,
+				Longitude: d.Location.Longitude,
+			},
+			Status: d.Status,
+		})
+	}
+
+	return &pb.ListDisastersResponse{Disasters: pbDisasters}, nil
 }
 
 // ReviewDisaster handles the review of a reported disaster.

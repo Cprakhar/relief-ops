@@ -20,16 +20,16 @@ type Coordinates struct {
 }
 
 type Disaster struct {
-	ID            bson.ObjectID `json:"id" bson:"_id,omitempty"`
-	Title         string        `json:"title" bson:"title"`
-	Description   string        `json:"description" bson:"description"`
-	Tags          []string      `json:"tags" bson:"tags"`
-	ContributorID string        `json:"contributor_id" bson:"contributor_id"`
-	CreatedAt     time.Time     `json:"created_at" bson:"created_at"`
-	UpdatedAt     time.Time     `json:"updated_at" bson:"updated_at"`
-	ImageURLs     []string      `json:"image_urls" bson:"image_urls"`
-	Location      Coordinates   `json:"location" bson:"location"`
-	Status        string        `json:"status" bson:"status"`
+	ID          bson.ObjectID `json:"id" bson:"_id,omitempty"`
+	Title       string        `json:"title" bson:"title"`
+	Description string        `json:"description" bson:"description"`
+	Tags        []string      `json:"tags" bson:"tags"`
+	VolunteerID string        `json:"volunteer_id" bson:"volunteer_id"`
+	CreatedAt   time.Time     `json:"created_at" bson:"created_at"`
+	UpdatedAt   time.Time     `json:"updated_at" bson:"updated_at"`
+	ImageURLs   []string      `json:"image_urls" bson:"image_urls"`
+	Location    Coordinates   `json:"location" bson:"location"`
+	Status      string        `json:"status" bson:"status"`
 }
 
 type User struct {

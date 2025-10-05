@@ -23,6 +23,8 @@ type mongodbDisasterRepo struct {
 // DisasterRepo defines the interface for disaster repository operations.
 type DisasterRepo interface {
 	Create(ctx context.Context, disaster *types.Disaster) (string, error)
+	GetByID(ctx context.Context, id string) (*types.Disaster, error)
+	GetAll(ctx context.Context, status string) ([]*types.Disaster, error)
 	Delete(ctx context.Context, disasterID string) error
 	UpdateStatus(ctx context.Context, disasterID, status string) error
 }
@@ -83,6 +85,22 @@ func (r *mongodbDisasterRepo) Delete(ctx context.Context, disasterID string) err
 	}
 }
 
+func (r *mongodbDisasterRepo) GetByID(ctx context.Context, id string) (*types.Disaster, error) {
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeout)
+	defer cancel()
+
+	var disaster types.Disaster
+	filter := bson.M{
+		"_id": id,
+	}
+
+	err := r.db.FindOne(ctx, filter).Decode(&disaster)
+	if err != nil {
+		return nil, err
+	}
+	return &disaster, nil
+}
+
 // UpdateStatus updates the status of a disaster entry.
 func (r *mongodbDisasterRepo) UpdateStatus(ctx context.Context, disasterID, status string) error {
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeout)
@@ -106,4 +124,36 @@ func (r *mongodbDisasterRepo) UpdateStatus(ctx context.Context, disasterID, stat
 	default:
 		return res.Err()
 	}
+}
+
+// GetAll retrieves all disaster entries, optionally filtered by status.
+func (r *mongodbDisasterRepo) GetAll(ctx context.Context, status string) ([]*types.Disaster, error) {
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeout)
+	defer cancel()
+
+	filter := bson.M{}
+	if status != "" {
+		filter["status"] = status
+	}
+
+	cursor, err := r.db.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var disasters []*types.Disaster
+	for cursor.Next(ctx) {
+		var disaster types.Disaster
+		if err := cursor.Decode(&disaster); err != nil {
+			return nil, err
+		}
+		disasters = append(disasters, &disaster)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return disasters, nil
 }

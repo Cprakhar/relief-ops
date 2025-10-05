@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	AdminRole       = "admin"
-	ContributorRole = "contributor"
+	AdminRole     = "admin"
+	UserRole      = "user"
+	VolunteerRole = "volunteer"
 )
 
 type JwtConfig struct {
@@ -27,7 +28,9 @@ type userService struct {
 // UserService defines the interface for user service operations.
 type UserService interface {
 	CreateUser(ctx context.Context, user *types.User) (string, error)
+	GetUserByEmail(ctx context.Context, email string) (*types.User, error)
 	Login(ctx context.Context, email, password string) (*types.User, string, error)
+	OAuthSignIn(ctx context.Context, user *types.User) (string, error)
 	GetUserByID(ctx context.Context, id string) (*types.User, error)
 	GetAdmins(ctx context.Context) ([]*types.User, error)
 }
@@ -82,4 +85,23 @@ func (s *userService) Login(ctx context.Context, email, password string) (*types
 // GetUserByID retrieves a user by their ID.
 func (s *userService) GetUserByID(ctx context.Context, id string) (*types.User, error) {
 	return s.repo.GetByID(ctx, id)
+}
+
+func (s *userService) OAuthSignIn(ctx context.Context, user *types.User) (string, error) {
+	uDetails := &util.UserDetails{
+		UserID: user.ID.Hex(),
+		Email:  user.Email,
+		Role:   user.Role,
+	}
+
+	token, err := util.GenerateToken(uDetails, s.jwtCfg.Secret, s.jwtCfg.Expiry)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
+
+func (s *userService) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
+	return s.repo.GetByEmail(ctx, email)
 }

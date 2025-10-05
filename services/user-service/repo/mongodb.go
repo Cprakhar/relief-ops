@@ -55,9 +55,6 @@ func (r *mongodbUserRepo) Create(ctx context.Context, user *types.User) (string,
 
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
-	if user.Role == "" {
-		user.Role = "contributor" // default role
-	}
 
 	res, err := r.db.InsertOne(ctx, user)
 	if err != nil {

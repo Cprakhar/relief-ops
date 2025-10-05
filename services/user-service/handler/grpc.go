@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 
+	"github.com/cprakhar/relief-ops/services/user-service/repo"
 	"github.com/cprakhar/relief-ops/services/user-service/service"
 	pb "github.com/cprakhar/relief-ops/shared/proto/user"
 	"github.com/cprakhar/relief-ops/shared/types"
@@ -27,16 +28,60 @@ func NewUsergRPCHandler(srv *grpc.Server, svc service.UserService, s string) {
 	pb.RegisterUserServiceServer(srv, handler)
 }
 
+func (h *gRPCHandler) OAuthSignIn(ctx context.Context, req *pb.OAuthSignInRequest) (*pb.LoginUserResponse, error) {
+	email := req.GetEmail()
+	name := req.GetName()
+	avatarURL := req.GetAvatarUrl()
+	role := req.GetRole()
+
+	user := &types.User{
+		Name:      name,
+		Email:     email,
+		Role:      role,
+		AvatarURL: avatarURL,
+	}
+
+	userID, err := h.svc.CreateUser(ctx, user)
+	if err != nil {
+		if err == repo.ErrResourceConflict {
+			// User already exists, fetch the existing user
+			existingUser, err := h.svc.GetUserByEmail(ctx, user.Email)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to get existing user: %v", err)
+			}
+			user = existingUser
+		}
+	}
+
+	token, err := h.svc.OAuthSignIn(ctx, user)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to sign in user: %v", err)
+	}
+
+	return &pb.LoginUserResponse{
+		Token: token,
+		User: &pb.User{
+			Id:        userID,
+			Name:      user.Name,
+			Email:     user.Email,
+			Role:      user.Role,
+			AvatarUrl: user.AvatarURL,
+		},
+	}, nil
+}
+
 // RegisterUser handles user registration.
 func (h *gRPCHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
 	email := req.GetEmail()
 	password := req.GetPassword()
 	name := req.GetName()
+	role := req.GetRole()
 
 	user := &types.User{
 		Name:     name,
 		Email:    email,
 		Password: password,
+		Role:     role,
 	}
 
 	// Create the user
@@ -46,7 +91,8 @@ func (h *gRPCHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 	}
 
 	return &pb.RegisterUserResponse{
-		Id: userID,
+		Id:   userID,
+		Role: role,
 	}, nil
 }
 

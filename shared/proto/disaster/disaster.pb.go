@@ -228,7 +228,7 @@ type ReportDisasterRequest struct {
 	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	Tags          []string               `protobuf:"bytes,3,rep,name=tags,proto3" json:"tags,omitempty"`
 	ImageURLs     []string               `protobuf:"bytes,4,rep,name=imageURLs,proto3" json:"imageURLs,omitempty"`
-	ContributorID string                 `protobuf:"bytes,5,opt,name=contributorID,proto3" json:"contributorID,omitempty"`
+	VolunteerID   string                 `protobuf:"bytes,5,opt,name=volunteerID,proto3" json:"volunteerID,omitempty"`
 	Location      *Coordinates           `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -292,9 +292,9 @@ func (x *ReportDisasterRequest) GetImageURLs() []string {
 	return nil
 }
 
-func (x *ReportDisasterRequest) GetContributorID() string {
+func (x *ReportDisasterRequest) GetVolunteerID() string {
 	if x != nil {
-		return x.ContributorID
+		return x.VolunteerID
 	}
 	return ""
 }
@@ -461,7 +461,7 @@ type GetDisasterResponse struct {
 	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	Tags          []string               `protobuf:"bytes,4,rep,name=tags,proto3" json:"tags,omitempty"`
 	ImageURLs     []string               `protobuf:"bytes,5,rep,name=imageURLs,proto3" json:"imageURLs,omitempty"`
-	ContributorID string                 `protobuf:"bytes,6,opt,name=contributorID,proto3" json:"contributorID,omitempty"`
+	VolunteerID   string                 `protobuf:"bytes,6,opt,name=volunteerID,proto3" json:"volunteerID,omitempty"`
 	Location      *Coordinates           `protobuf:"bytes,7,opt,name=location,proto3" json:"location,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
@@ -536,9 +536,9 @@ func (x *GetDisasterResponse) GetImageURLs() []string {
 	return nil
 }
 
-func (x *GetDisasterResponse) GetContributorID() string {
+func (x *GetDisasterResponse) GetVolunteerID() string {
 	if x != nil {
-		return x.ContributorID
+		return x.VolunteerID
 	}
 	return ""
 }
@@ -661,13 +661,13 @@ const file_disaster_proto_rawDesc = "" +
 	"\x06status\x18\x03 \x01(\tR\x06status\"@\n" +
 	"\x16ReviewDisasterResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
-	"\x06status\x18\x02 \x01(\tR\x06status\"\xda\x01\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\"\xd6\x01\n" +
 	"\x15ReportDisasterRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x12\n" +
 	"\x04tags\x18\x03 \x03(\tR\x04tags\x12\x1c\n" +
-	"\timageURLs\x18\x04 \x03(\tR\timageURLs\x12$\n" +
-	"\rcontributorID\x18\x05 \x01(\tR\rcontributorID\x121\n" +
+	"\timageURLs\x18\x04 \x03(\tR\timageURLs\x12 \n" +
+	"\vvolunteerID\x18\x05 \x01(\tR\vvolunteerID\x121\n" +
 	"\blocation\x18\x06 \x01(\v2\x15.disaster.CoordinatesR\blocation\"G\n" +
 	"\vCoordinates\x12\x1a\n" +
 	"\blatitude\x18\x01 \x01(\x01R\blatitude\x12\x1c\n" +
@@ -676,14 +676,14 @@ const file_disaster_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\"$\n" +
 	"\x12GetDisasterRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xa6\x03\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xa2\x03\n" +
 	"\x13GetDisasterResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x12\n" +
 	"\x04tags\x18\x04 \x03(\tR\x04tags\x12\x1c\n" +
-	"\timageURLs\x18\x05 \x03(\tR\timageURLs\x12$\n" +
-	"\rcontributorID\x18\x06 \x01(\tR\rcontributorID\x121\n" +
+	"\timageURLs\x18\x05 \x03(\tR\timageURLs\x12 \n" +
+	"\vvolunteerID\x18\x06 \x01(\tR\vvolunteerID\x121\n" +
 	"\blocation\x18\a \x01(\v2\x15.disaster.CoordinatesR\blocation\x128\n" +
 	"\tcreatedAt\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x128\n" +
 	"\tupdatedAt\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x16\n" +

@@ -9,8 +9,8 @@ const (
 )
 
 type DisasterEventCreatedPayload struct {
-	DisasterID    string            `json:"disaster_id"`
-	Location      types.Coordinates `json:"location"`
-	Range         int               `json:"range"`
-	ContributorID string            `json:"contributor_id"`
+	DisasterID  string            `json:"disaster_id"`
+	Location    types.Coordinates `json:"location"`
+	Range       int               `json:"range"`
+	VolunteerID string            `json:"volunteer_id"`
 }

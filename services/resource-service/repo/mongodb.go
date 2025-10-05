@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/cprakhar/relief-ops/shared/types"
@@ -92,6 +93,7 @@ func (r *mongodbResourceRepo) AddResources(ctx context.Context, resources []*typ
 	_, err := r.db.BulkWrite(ctx, operations, bulkOpts)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
+			log.Printf("Duplicate key error while adding resources: %v", err)
 			return nil
 		}
 		return fmt.Errorf("bulk write failed: %w", err)

@@ -37,7 +37,7 @@ message ReportDisasterRequest {
     string description = 2;
     repeated string tags = 3;
     repeated string imageURLs = 4;
-    string contributorID = 5;
+    string volunteerID = 5;
     Coordinates location = 6;
 }
 
@@ -61,7 +61,7 @@ message GetDisasterResponse {
     string description = 3;
     repeated string tags = 4;
     repeated string imageURLs = 5;
-    string contributorID = 6;
+    string volunteerID = 6;
     Coordinates location = 7;
     google.protobuf.Timestamp createdAt = 8;
     google.protobuf.Timestamp updatedAt = 9;

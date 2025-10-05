@@ -7,7 +7,6 @@ import (
 
 	"github.com/cprakhar/relief-ops/services/user-service/mail"
 	"github.com/cprakhar/relief-ops/services/user-service/service"
-	"github.com/cprakhar/relief-ops/shared/env"
 	"github.com/cprakhar/relief-ops/shared/events"
 	"github.com/cprakhar/relief-ops/shared/messaging"
 )
@@ -16,11 +15,12 @@ type disasterConsumer struct {
 	kafkaClient *messaging.KafkaClient
 	svc         service.UserService
 	mailer      mail.Client
+	webURL      string
 }
 
 // NewDisasterConsumer creates a new instance of disasterConsumer.
-func NewDisasterConsumer(kc *messaging.KafkaClient, svc service.UserService, mailer mail.Client) *disasterConsumer {
-	return &disasterConsumer{kafkaClient: kc, svc: svc, mailer: mailer}
+func NewDisasterConsumer(kc *messaging.KafkaClient, svc service.UserService, mailer mail.Client, w string) *disasterConsumer {
+	return &disasterConsumer{kafkaClient: kc, svc: svc, mailer: mailer, webURL: w}
 }
 
 // Consumer starts consuming messages from the specified topics.
@@ -52,16 +52,15 @@ func (dc *disasterConsumer) handleAdminNotify(ctx context.Context, value []byte)
 		return err
 	}
 
-	webURL := env.GetString("WEB_URL", "http://localhost:3000")
 	adminData := struct {
-		DisasterID    string
-		ContributorID string
-		ReviewURL     string
+		DisasterID  string
+		VolunteerID string
+		ReviewURL   string
 	}{
-		DisasterID:    data.DisasterID,
-		ContributorID: data.ContributorID,
-		ReviewURL:     fmt.Sprintf("%s/admin/review/%s", webURL, data.DisasterID),
+		DisasterID:  data.DisasterID,
+		VolunteerID: data.VolunteerID,
+		ReviewURL:   fmt.Sprintf("%s/admin/review/%s", dc.webURL, data.DisasterID),
 	}
 
-	return dc.mailer.SpamMail(users, adminData, false)
+	return dc.mailer.NotifyMultiple(users, adminData, false)
 }

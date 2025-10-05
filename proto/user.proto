@@ -7,18 +7,28 @@ option go_package = "shared/proto/user;user";
 service UserService {
     rpc RegisterUser (RegisterUserRequest) returns (RegisterUserResponse);
     rpc LoginUser (LoginUserRequest) returns (LoginUserResponse);
+    rpc OAuthSignIn (OAuthSignInRequest) returns (LoginUserResponse);
     rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
     rpc GetUser (GetUserRequest) returns (User);
+}
+
+message OAuthSignInRequest {
+    string email = 1;
+    string name = 2;
+    string avatar_url = 3;
+    string role = 4;
 }
 
 message RegisterUserRequest {
     string name = 1;
     string email = 2;
     string password = 3;
+    string role = 4;
 }
 
 message RegisterUserResponse {
     string id = 1;
+    string role = 2;
 }
 
 message LoginUserRequest {

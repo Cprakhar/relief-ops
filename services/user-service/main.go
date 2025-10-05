@@ -20,6 +20,7 @@ import (
 
 var (
 	addr           = env.GetString("USER_GRPC_ADDR", ":9001")
+	webURL         = env.GetString("WEB_URL", "http://localhost:3000")
 	fromEmail      = env.GetString("FROM_EMAIL", "developerluffy23@gmail.com")
 	sendGridAPIKey = env.GetString("SENDGRID_API_KEY", "")
 	brokers        = env.GetString("KAFKA_BROKERS", "apache-kafka:9092")
@@ -106,7 +107,7 @@ func main() {
 
 	// Initialize and start the disaster consumer
 	topics := []string{events.UserNotifyAdminReview}
-	disasterConsumer := event.NewDisasterConsumer(kafkaClient, userService, mailer)
+	disasterConsumer := event.NewDisasterConsumer(kafkaClient, userService, mailer, webURL)
 
 	go func() {
 		if err := disasterConsumer.Consumer(ctx, topics); err != nil {

@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	UserService_RegisterUser_FullMethodName  = "/user.UserService/RegisterUser"
 	UserService_LoginUser_FullMethodName     = "/user.UserService/LoginUser"
+	UserService_OAuthSignIn_FullMethodName   = "/user.UserService/OAuthSignIn"
 	UserService_ValidateToken_FullMethodName = "/user.UserService/ValidateToken"
 	UserService_GetUser_FullMethodName       = "/user.UserService/GetUser"
 )
@@ -31,6 +32,7 @@ const (
 type UserServiceClient interface {
 	RegisterUser(ctx context.Context, in *RegisterUserRequest, opts ...grpc.CallOption) (*RegisterUserResponse, error)
 	LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error)
+	OAuthSignIn(ctx context.Context, in *OAuthSignInRequest, opts ...grpc.CallOption) (*LoginUserResponse, error)
 	ValidateToken(ctx context.Context, in *ValidateTokenRequest, opts ...grpc.CallOption) (*ValidateTokenResponse, error)
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*User, error)
 }
@@ -63,6 +65,16 @@ func (c *userServiceClient) LoginUser(ctx context.Context, in *LoginUserRequest,
 	return out, nil
 }
 
+func (c *userServiceClient) OAuthSignIn(ctx context.Context, in *OAuthSignInRequest, opts ...grpc.CallOption) (*LoginUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginUserResponse)
+	err := c.cc.Invoke(ctx, UserService_OAuthSignIn_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) ValidateToken(ctx context.Context, in *ValidateTokenRequest, opts ...grpc.CallOption) (*ValidateTokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ValidateTokenResponse)
@@ -89,6 +101,7 @@ func (c *userServiceClient) GetUser(ctx context.Context, in *GetUserRequest, opt
 type UserServiceServer interface {
 	RegisterUser(context.Context, *RegisterUserRequest) (*RegisterUserResponse, error)
 	LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error)
+	OAuthSignIn(context.Context, *OAuthSignInRequest) (*LoginUserResponse, error)
 	ValidateToken(context.Context, *ValidateTokenRequest) (*ValidateTokenResponse, error)
 	GetUser(context.Context, *GetUserRequest) (*User, error)
 	mustEmbedUnimplementedUserServiceServer()
@@ -106,6 +119,9 @@ func (UnimplementedUserServiceServer) RegisterUser(context.Context, *RegisterUse
 }
 func (UnimplementedUserServiceServer) LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginUser not implemented")
+}
+func (UnimplementedUserServiceServer) OAuthSignIn(context.Context, *OAuthSignInRequest) (*LoginUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OAuthSignIn not implemented")
 }
 func (UnimplementedUserServiceServer) ValidateToken(context.Context, *ValidateTokenRequest) (*ValidateTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateToken not implemented")
@@ -170,6 +186,24 @@ func _UserService_LoginUser_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_OAuthSignIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OAuthSignInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).OAuthSignIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_OAuthSignIn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).OAuthSignIn(ctx, req.(*OAuthSignInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_ValidateToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ValidateTokenRequest)
 	if err := dec(in); err != nil {
@@ -220,6 +254,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LoginUser",
 			Handler:    _UserService_LoginUser_Handler,
+		},
+		{
+			MethodName: "OAuthSignIn",
+			Handler:    _UserService_OAuthSignIn_Handler,
 		},
 		{
 			MethodName: "ValidateToken",

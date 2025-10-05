@@ -66,24 +66,67 @@ func (s *SendGridMailer) Send(templateFile, name, email string, data any, isSand
 		Jitter:        true,
 	}
 
+	var statusCode int
 	err = tools.RetryWithBackoff(context.Background(), retryCfg, func() error {
 		response, err := s.client.Send(message)
 		if err != nil {
 			return err
 		}
+		statusCode = response.StatusCode
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
 			return nil
 		}
 		return fmt.Errorf("failed to send email, status code: %d, body: %s", response.StatusCode, response.Body)
 	})
-	return -1, err
+	if err != nil {
+		return statusCode, err
+	}
+	return statusCode, nil
 }
 
-// SpamMail sends the same email to multiple users.
-func (s *SendGridMailer) SpamMail(users []*types.User, data any, isSandbox bool) error {
-	var err error
-	for _, user := range users {
-		_, err = s.Send(AdminNotifyTemplate, user.Name, user.Email, data, isSandbox)
+// NotifyMultiple sends the same email to multiple users with proper error handling.
+// Returns a slice of errors (one per user) and an aggregate error if any sends failed.
+func (s *SendGridMailer) NotifyMultiple(users []*types.User, data any, isSandbox bool) error {
+	if len(users) == 0 {
+		return nil
 	}
-	return err
+
+	type result struct {
+		email      string
+		err        error
+		statusCode int
+	}
+
+	results := make(chan result, len(users))
+	semaphore := make(chan struct{}, 5) // Limit to 5 concurrent sends
+
+	// Send emails concurrently
+	for _, user := range users {
+		semaphore <- struct{}{} // Acquire semaphore
+		go func(u *types.User) {
+			defer func() { <-semaphore }() // Release semaphore
+			statusCode, err := s.Send(AdminNotifyTemplate, u.Name, u.Email, data, isSandbox)
+			results <- result{email: u.Email, err: err, statusCode: statusCode}
+		}(user)
+	}
+
+	// Collect results
+	var failedEmails []string
+	successCount := 0
+	for range users {
+		res := <-results
+		if res.err != nil {
+			failedEmails = append(failedEmails, res.email)
+			fmt.Printf("Failed to send email to %s: %v (status: %d)\n", res.email, res.err, res.statusCode)
+		} else {
+			successCount++
+		}
+	}
+
+	if len(failedEmails) > 0 {
+		return fmt.Errorf("failed to send %d/%d emails to: %v", len(failedEmails), len(users), failedEmails)
+	}
+
+	fmt.Printf("Successfully sent %d emails to admins\n", successCount)
+	return nil
 }
