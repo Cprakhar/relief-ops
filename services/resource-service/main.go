@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -15,9 +16,14 @@ import (
 	"github.com/cprakhar/relief-ops/shared/env"
 	"github.com/cprakhar/relief-ops/shared/events"
 	"github.com/cprakhar/relief-ops/shared/messaging"
+	"github.com/cprakhar/relief-ops/shared/observe/logs"
+	"github.com/cprakhar/relief-ops/shared/observe/traces"
 )
 
 var (
+	addr        = env.GetString("RESOURCE_GRPC_ADDR", ":9003")
+	environment = env.GetString("ENVIRONMENT", "development")
+
 	// Kafka configuration
 	brokers = env.GetString("KAFKA_BROKERS", "apache-kafka:9092")
 
@@ -28,12 +34,46 @@ var (
 	mongoMaxIdle = env.GetTimeDuration("MONGODB_MAX_IDLE", 5*time.Second)
 	mongoMaxPool = uint64(env.GetInt("MONGODB_MAX_POOL", 10))
 	mongoMinPool = uint64(env.GetInt("MONGODB_MIN_POOL", 2))
+
+	// OTLP configuration
+	otlpEndpoint = env.GetString("OTLP_ENDPOINT", "otel-collector:4317")
+	otlpInsecure = env.GetBool("OTLP_INSECURE", true)
 )
 
 func main() {
+	// Initialize logger
+	logger, err := logs.Init("resource-service")
+	if err != nil {
+		log.Fatalf("Failed to initialize logger: %v", err)
+	}
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			logger.Fatalw("Failed to sync logger", "error", err)
+		}
+	}()
+	logger.Info("Logger initialized")
+
 	// Set up context with signal handling for graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	tracerCfg := &traces.TracerConfig{
+		ServiceName:      "resource-service",
+		Environment:      environment,
+		Secure:           !otlpInsecure,
+		ExporterEndpoint: otlpEndpoint,
+	}
+
+	shutdown, err := traces.InitTrace(ctx, tracerCfg)
+	if err != nil {
+		logger.Fatalw("Failed to initialize tracing", "error", err)
+	}
+	defer func() {
+		if err := shutdown(ctx); err != nil {
+			logger.Fatalw("Failed to shutdown tracer provider", "error", err)
+		}
+	}()
+	logger.Info("Tracing initialized")
 
 	// Initialize MongoDB client
 	mongoCfg := &db.MongoDBConfig{
@@ -48,9 +88,9 @@ func main() {
 
 	mongoClient, err := db.NewMongoDBClient(mongoCfg)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		logger.Fatalw("Failed to connect to MongoDB", "error", err)
 	}
-	log.Println("Connected to MongoDB")
+	logger.Info("Connected to MongoDB")
 
 	// Initialize Kafka client
 	kafkaCfg := &messaging.KafkaConfig{
@@ -60,14 +100,14 @@ func main() {
 
 	kafkaClient, err := messaging.NewKafkaClient("resource-service", kafkaCfg)
 	if err != nil {
-		log.Fatalf("Failed to create Kafka client: %v", err)
+		logger.Fatalw("Failed to create Kafka client", "error", err)
 	}
 	defer kafkaClient.Close()
-	log.Println("Kafka client initialized")
+	logger.Info("Kafka client initialized")
 
 	resourceRepo, err := repo.NewResourceRepo(ctx, mongoClient)
 	if err != nil {
-		log.Fatalf("Failed to create resource repository: %v", err)
+		logger.Fatalw("Failed to create resource repository", "error", err)
 	}
 	resourceService := service.NewResourceService(resourceRepo)
 
@@ -75,14 +115,26 @@ func main() {
 	topics := []string{events.ResourceCommandFind}
 	disasterConsumer := event.NewDisasterConsumer(kafkaClient, resourceService)
 
-	done := make(chan struct{})
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
-		defer close(done)
+		defer wg.Done()
 		if err := disasterConsumer.DisasterConsumer(ctx, topics); err != nil {
-			log.Printf("Error in disaster consumer: %v", err)
+			logger.Errorw("Error in disaster consumer", "error", err)
+		}
+	}()
+
+	gRPCServer := newgRPCServer(addr, resourceService, kafkaClient)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		logger.Infow("Disaster service running", "addr", addr)
+		if err := gRPCServer.run(ctx); err != nil {
+			logger.Errorw("gRPC server error", "error", err)
 		}
 	}()
 	<-ctx.Done()
-	<-done
-	log.Println("Resource service stopped")
+	wg.Wait()
+	logger.Info("Resource service stopped")
 }

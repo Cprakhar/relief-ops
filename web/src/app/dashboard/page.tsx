@@ -14,7 +14,7 @@ const DashboardPage = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-          {user ? `Welcome back, ${user.username}!` : 'Disaster Relief Dashboard'}
+          {user ? `Welcome back, ${user.name}!` : 'Disaster Relief Dashboard'}
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
           {user 

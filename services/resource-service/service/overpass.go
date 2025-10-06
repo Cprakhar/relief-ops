@@ -35,15 +35,18 @@ type resourceService struct {
 	repo repo.ResourceRepo
 }
 
+// ResourceService defines the interface for resource service operations.
 type ResourceService interface {
 	SaveResources(ctx context.Context, rg int, lat, lon float64) error
 	GetNearbyResources(ctx context.Context, lat, lon float64, radiusMeters int) ([]*types.Resource, error)
 }
 
-func NewResourceService(r repo.ResourceRepo) *resourceService {
+// NewResourceService creates a new instance of resourceService.
+func NewResourceService(r repo.ResourceRepo) ResourceService {
 	return &resourceService{repo: r}
 }
 
+// findResourcesWithinRadius queries the Overpass API to find resources within a given radius (in meters) of specified coordinates.
 func findResourcesWithinRadius(rg int, lat, lon float64) ([]*types.Resource, error) {
 	overpassURL := "http://overpass-api.de/api/interpreter"
 
@@ -117,6 +120,7 @@ func findResourcesWithinRadius(rg int, lat, lon float64) ([]*types.Resource, err
 	return resources, nil
 }
 
+// SaveResources fetches resources from the Overpass API within a given radius and saves them to the repository.
 func (s *resourceService) SaveResources(ctx context.Context, rg int, lat, lon float64) error {
 	retryCfg := &tools.RetryConfig{
 		MaxAttempts:   3,

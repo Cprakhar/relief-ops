@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"time"
 
+	"github.com/cprakhar/relief-ops/shared/observe/logs"
 	"github.com/cprakhar/relief-ops/shared/tools"
 	"github.com/cprakhar/relief-ops/shared/types"
 	"github.com/sendgrid/sendgrid-go"
@@ -87,6 +88,8 @@ func (s *SendGridMailer) Send(templateFile, name, email string, data any, isSand
 // NotifyMultiple sends the same email to multiple users with proper error handling.
 // Returns a slice of errors (one per user) and an aggregate error if any sends failed.
 func (s *SendGridMailer) NotifyMultiple(users []*types.User, data any, isSandbox bool) error {
+	logger := logs.L()
+
 	if len(users) == 0 {
 		return nil
 	}
@@ -117,7 +120,7 @@ func (s *SendGridMailer) NotifyMultiple(users []*types.User, data any, isSandbox
 		res := <-results
 		if res.err != nil {
 			failedEmails = append(failedEmails, res.email)
-			fmt.Printf("Failed to send email to %s: %v (status: %d)\n", res.email, res.err, res.statusCode)
+			logger.Errorw("Failed to send email", "email", res.email, "error", res.err, "statusCode", res.statusCode)
 		} else {
 			successCount++
 		}
@@ -127,6 +130,6 @@ func (s *SendGridMailer) NotifyMultiple(users []*types.User, data any, isSandbox
 		return fmt.Errorf("failed to send %d/%d emails to: %v", len(failedEmails), len(users), failedEmails)
 	}
 
-	fmt.Printf("Successfully sent %d emails to admins\n", successCount)
+	logger.Infow("Successfully sent emails", "count", successCount)
 	return nil
 }

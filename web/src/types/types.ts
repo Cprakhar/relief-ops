@@ -15,7 +15,7 @@ export type ApiError = {
 
 export type User = {
     id: string;
-    username: string;
+    name: string;
     email: string;
     role: Role;
     avatar_url?: string;
@@ -26,10 +26,11 @@ export type FormErrors = {
 }
 
 export type SignupFormData = {
-    username: string;
+    name: string;
     email: string;
     password: string;
     confirmPassword: string;
+    role?: string;
 }
 
 export type LoginFormData = {

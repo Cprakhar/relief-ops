@@ -107,7 +107,7 @@ const Navigation = ({ user, onLogout }: NavigationProps) => {
                     <div className="w-9 h-9 rounded-full border-2 border-gray-200 dark:border-gray-700 group-hover:border-blue-500 transition-colors overflow-hidden">
                       <Image
                         src={user.avatar_url}
-                        alt={user.username}
+                        alt={user.name}
                         width={36}
                         height={36}
                         className="w-full h-full object-cover"
@@ -115,13 +115,13 @@ const Navigation = ({ user, onLogout }: NavigationProps) => {
                     </div>
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm border-2 border-transparent group-hover:border-blue-500 transition-colors">
-                      {getInitials(user.username)}
+                      {getInitials(user.name)}
                     </div>
                   )}
                   
                   {/* Username (desktop only) */}
                   <span className="hidden lg:block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {user.username}
+                    {user.name}
                   </span>
                   
                   <ChevronDown 
@@ -137,7 +137,7 @@ const Navigation = ({ user, onLogout }: NavigationProps) => {
                     {/* User Info */}
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {user.username}
+                        {user.name}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         {user.email}

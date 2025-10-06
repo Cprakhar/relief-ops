@@ -3,18 +3,22 @@ package handler
 import (
 	"context"
 
-	"github.com/cprakhar/relief-ops/services/resource-service/repo"
+	"github.com/cprakhar/relief-ops/services/resource-service/service"
 	pb "github.com/cprakhar/relief-ops/shared/proto/resource"
 	"google.golang.org/grpc"
 )
 
 type gRPCHandler struct {
 	pb.UnimplementedResourceServiceServer
-	svc repo.ResourceRepo
+	svc service.ResourceService
+}
+
+type GrpcHandler interface {
+	GetNearbyResources(ctx context.Context, req *pb.GetResourcesRequest) (*pb.GetResourcesResponse, error)
 }
 
 // NewResourcegRPCHandler registers the gRPC handler for the ResourceService.
-func NewResourcegRPCHandler(srv *grpc.Server, svc repo.ResourceRepo) {
+func NewResourcegRPCHandler(srv *grpc.Server, svc service.ResourceService) {
 	handler := &gRPCHandler{svc: svc}
 	pb.RegisterResourceServiceServer(srv, handler)
 }

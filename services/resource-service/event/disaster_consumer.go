@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/cprakhar/relief-ops/services/resource-service/service"
 	"github.com/cprakhar/relief-ops/shared/events"
 	"github.com/cprakhar/relief-ops/shared/messaging"
+	"github.com/cprakhar/relief-ops/shared/observe/logs"
 )
 
 type disasterConsumer struct {
@@ -23,7 +23,7 @@ func NewDisasterConsumer(kc *messaging.KafkaClient, svc service.ResourceService)
 
 // DisasterConsumer starts consuming messages from the specified topics.
 func (dc *disasterConsumer) DisasterConsumer(ctx context.Context, topics []string) error {
-	return dc.kafkaClient.Consume(ctx, topics, func(eventType, key string, value []byte) error {
+	return dc.kafkaClient.Consume(ctx, topics, func(ctx context.Context, eventType, key string, value []byte) error {
 		// Handle the event based on the topic
 		switch eventType {
 		case events.ResourceCommandFind:
@@ -39,21 +39,23 @@ func (dc *disasterConsumer) DisasterConsumer(ctx context.Context, topics []strin
 
 // handleFindResources processes the find resources command.
 func (dc *disasterConsumer) handleFindResources(ctx context.Context, value []byte) error {
+	logger := logs.L()
+
 	var payload events.DisasterEventCreatedPayload
 	if err := json.Unmarshal(value, &payload); err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
-	// For simplicity, just log the received payload
-	log.Printf("Finding resources for disaster: %s...", payload.DisasterID)
+
+	logger.Infow("Finding resources", "disaster_id", payload.DisasterID, "location", payload.Location, "range", payload.Range)
 	if err := dc.svc.SaveResources(ctx, payload.Range, payload.Location.Latitude, payload.Location.Longitude); err != nil {
 		return fmt.Errorf("failed to save resources: %w", err)
 	}
-	log.Printf("Resources saved for disaster: %s", payload.DisasterID)
+	logger.Infow("Resources saved successfully", "disaster_id", payload.DisasterID)
 
 	// If Successful, Notify User Service to notify admin to review
 	if err := dc.kafkaClient.Produce(ctx, events.UserNotifyAdminReview, payload.DisasterID, value); err != nil {
 		return fmt.Errorf("failed to notify user service for admin review: %w", err)
 	}
-	log.Printf("Notified user-service for admin review with disasterID %s", payload.DisasterID)
+	logger.Infow("Notified user service for admin review", "disaster_id", payload.DisasterID)
 	return nil
 }

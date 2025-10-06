@@ -14,6 +14,7 @@ import (
 
 var (
 	QueryTimeout = 5 * time.Second
+	ErrNotFound  = fmt.Errorf("record not found")
 )
 
 type mongodbDisasterRepo struct {
@@ -79,7 +80,7 @@ func (r *mongodbDisasterRepo) Delete(ctx context.Context, disasterID string) err
 	res := r.db.FindOneAndDelete(ctx, filter)
 	switch res.Err() {
 	case mongo.ErrNoDocuments:
-		return fmt.Errorf("record not found")
+		return ErrNotFound
 	default:
 		return res.Err()
 	}
@@ -120,7 +121,7 @@ func (r *mongodbDisasterRepo) UpdateStatus(ctx context.Context, disasterID, stat
 	res := r.db.FindOneAndUpdate(ctx, filter, update)
 	switch res.Err() {
 	case mongo.ErrNoDocuments:
-		return fmt.Errorf("record not found")
+		return ErrNotFound
 	default:
 		return res.Err()
 	}

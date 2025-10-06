@@ -25,7 +25,7 @@ func NewDisasterConsumer(kc *messaging.KafkaClient, svc service.UserService, mai
 
 // Consumer starts consuming messages from the specified topics.
 func (dc *disasterConsumer) Consumer(ctx context.Context, topics []string) error {
-	return dc.kafkaClient.Consume(ctx, topics, func(eventType, key string, value []byte) error {
+	return dc.kafkaClient.Consume(ctx, topics, func(ctx context.Context, eventType, key string, value []byte) error {
 		switch eventType {
 		case events.UserNotifyAdminReview:
 			if err := dc.handleAdminNotify(ctx, value); err != nil {

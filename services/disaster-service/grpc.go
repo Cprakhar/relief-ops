@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"log"
 	"net"
 
 	"github.com/cprakhar/relief-ops/services/disaster-service/handler"
 	"github.com/cprakhar/relief-ops/services/disaster-service/service"
 	"github.com/cprakhar/relief-ops/shared/messaging"
+	"github.com/cprakhar/relief-ops/shared/observe/logs"
+	"github.com/cprakhar/relief-ops/shared/observe/traces"
 	"google.golang.org/grpc"
 )
 
@@ -24,13 +25,15 @@ func newgRPCServer(addr string, svc service.DisasterService, kc *messaging.Kafka
 
 // run starts the gRPC server and listens for incoming requests.
 func (s *gRPCServer) run(ctx context.Context) error {
+	logger := logs.L()
+
 	lis, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		return err
 	}
 
 	// Create a new gRPC server
-	srv := grpc.NewServer()
+	srv := grpc.NewServer(traces.WithTracingInterceptors()...)
 	handler.NewDisastergRPCHandler(srv, s.svc, s.kc)
 
 	// Listen for incoming requests in a separate goroutine
@@ -44,7 +47,7 @@ func (s *gRPCServer) run(ctx context.Context) error {
 	// Gracefully shutdown the server on context cancellation
 	go func() {
 		<-ctx.Done()
-		log.Println("Gracefully stopping gRPC server...")
+		logger.Info("Gracefully stopping gRPC server...")
 		srv.GracefulStop()
 	}()
 

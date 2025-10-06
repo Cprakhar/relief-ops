@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"time"
 
 	handlerhttp "github.com/cprakhar/relief-ops/services/api-gateway/handler/http"
+	"github.com/cprakhar/relief-ops/shared/observe/logs"
 )
 
 type httpServer struct {
@@ -21,6 +21,8 @@ func newHTTPServer(addr string, web string) *httpServer {
 
 // run starts the HTTP server and listens for incoming requests.
 func (s *httpServer) run(ctx context.Context) error {
+	logger := logs.L()
+
 	h := handlerhttp.NewHttpHandler(s.webURL)
 	srv := &http.Server{
 		Addr:    s.addr,
@@ -40,7 +42,7 @@ func (s *httpServer) run(ctx context.Context) error {
 		<-ctx.Done()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		log.Printf("Shutting down HTTP server on %s", s.addr)
+		logger.Info("Shutting down HTTP server")
 		srv.Shutdown(shutdownCtx)
 	}()
 

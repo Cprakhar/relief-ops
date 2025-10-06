@@ -19,6 +19,15 @@ type gRPCHandler struct {
 	jwtSecret string
 }
 
+// GrpcHandler defines the gRPC handler interface for user service.
+type GrpcHandler interface {
+	OAuthSignIn(ctx context.Context, req *pb.OAuthSignInRequest) (*pb.LoginUserResponse, error)
+	RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error)
+	LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.LoginUserResponse, error)
+	GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error)
+	ValidateToken(ctx context.Context, req *pb.ValidateTokenRequest) (*pb.ValidateTokenResponse, error)
+}
+
 // NewUsergRPCHandler registers the gRPC handler for user service.
 func NewUsergRPCHandler(srv *grpc.Server, svc service.UserService, s string) {
 	handler := &gRPCHandler{
@@ -28,6 +37,7 @@ func NewUsergRPCHandler(srv *grpc.Server, svc service.UserService, s string) {
 	pb.RegisterUserServiceServer(srv, handler)
 }
 
+// OAuthSignIn handles user sign-in via OAuth providers.
 func (h *gRPCHandler) OAuthSignIn(ctx context.Context, req *pb.OAuthSignInRequest) (*pb.LoginUserResponse, error) {
 	email := req.GetEmail()
 	name := req.GetName()
@@ -117,6 +127,7 @@ func (h *gRPCHandler) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 	}, nil
 }
 
+// GetUser retrieves a user by their ID.
 func (h *gRPCHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
 	userID := req.GetId()
 
@@ -134,6 +145,7 @@ func (h *gRPCHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 	}, nil
 }
 
+// ValidateToken checks the validity of a JWT token and returns the associated user details.
 func (h *gRPCHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenRequest) (*pb.ValidateTokenResponse, error) {
 	tokenStr := req.GetToken()
 

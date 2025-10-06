@@ -22,7 +22,11 @@ spec:
             - containerPort: 9003
           envFrom:
             - configMapRef:
+                name: api-gateway-config
+            - configMapRef:
                 name: kafka-config
+            - configMapRef:
+                name: logging-config
             - configMapRef:
                 name: mongodb-config
             - secretRef:

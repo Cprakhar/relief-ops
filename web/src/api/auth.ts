@@ -23,6 +23,7 @@ export const login = async (email: string, password: string) => {
             "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
+        credentials: "include",
     });
     if (!response.ok) {
         const errorData: ApiError  = await response.json();
@@ -31,13 +32,14 @@ export const login = async (email: string, password: string) => {
     return response.json();
 }
 
-export const signup = async (name: string, email: string, password: string) => {
+export const signup = async (name: string, email: string, password: string, role: string) => {
     const response = await fetch(`${API_URL}/api/auth/signup`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, role }),
+        credentials: "include",
     });
     if (!response.ok) {
         const errorData: ApiError  = await response.json();

@@ -18,17 +18,65 @@ const SignUp = ({ setAuthMode, formSubmit, fieldErrors, error, loading }: SignUp
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [showRoleModal, setShowRoleModal] = useState(false)
   const [selectedProvider, setSelectedProvider] = useState<OAuthProvider | null>(null)
+  const [pendingFormData, setPendingFormData] = useState<FormData | null>(null)
 
   const handleOAuthClick = (provider: OAuthProvider) => {
     setSelectedProvider(provider)
+    setPendingFormData(null)
+    setShowRoleModal(true)
+  }
+
+  const handleFormSubmitWithRole = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    // Extract and store form data
+    const form = e.currentTarget
+    const formData = new FormData(form)
+    setPendingFormData(formData)
+    setSelectedProvider(null)
     setShowRoleModal(true)
   }
 
   const handleRoleSelect = (role: Role) => {
+    setShowRoleModal(false)
+    
+    // If this is OAuth flow
     if (selectedProvider) {
       initiateOAuth(selectedProvider, role)
+    } 
+    // If this is traditional signup flow
+    else if (pendingFormData) {
+      // Create a temporary form element
+      const tempForm = document.createElement('form')
+      
+      // Add all existing form data as hidden inputs
+      pendingFormData.forEach((value, key) => {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = key
+        input.value = value.toString()
+        tempForm.appendChild(input)
+      })
+      
+      // Add role as hidden input
+      const roleInput = document.createElement('input')
+      roleInput.type = 'hidden'
+      roleInput.name = 'role'
+      roleInput.value = role.toLowerCase()
+      tempForm.appendChild(roleInput)
+      
+      // Create a minimal synthetic event object
+      const syntheticEvent = {
+        preventDefault: () => {},
+        currentTarget: tempForm,
+        target: tempForm,
+      } as unknown as React.FormEvent<HTMLFormElement>
+      
+      // Call the original formSubmit handler
+      formSubmit(syntheticEvent)
+      
+      // Cleanup
+      setPendingFormData(null)
     }
-    setShowRoleModal(false)
   }
 
   return (
@@ -60,20 +108,20 @@ const SignUp = ({ setAuthMode, formSubmit, fieldErrors, error, loading }: SignUp
             </div>
           )}
 
-          <form onSubmit={formSubmit} className="space-y-5">
+          <form onSubmit={handleFormSubmitWithRole} className="space-y-5">
             {/* Username Field */}
             <div className="space-y-2">
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Username
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Name
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                   <User className="w-5 h-5 text-gray-400" />
                 </div>
                 <input
-                  id="username"
+                  id="name"
                   type="text"
-                  name="username"
+                  name="name"
                   className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400"
                   placeholder="johndoe"
                 />
@@ -81,7 +129,7 @@ const SignUp = ({ setAuthMode, formSubmit, fieldErrors, error, loading }: SignUp
               {fieldErrors.username && (
                 <div className="flex items-start gap-2 text-red-500 text-sm mt-1">
                   <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>{fieldErrors.username.join(", ")}</span>
+                  <span>{fieldErrors.name.join(", ")}</span>
                 </div>
               )}
             </div>

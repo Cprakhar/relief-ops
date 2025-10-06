@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -39,11 +40,18 @@ func NewMongoDBClient(cfg *MongoDBConfig) (*mongo.Collection, error) {
 		return nil, err
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := mongodb.Ping(ctx, nil); err != nil {
+		return nil, err
+	}
+
 	collection := mongodb.Database(cfg.Database).Collection(cfg.Collection)
 	return collection, nil
 }
 
-func PrimitiveToHex(id interface{}) (string, error) {
+func PrimitiveToHex(id any) (string, error) {
 	oid, ok := id.(bson.ObjectID)
 	if !ok {
 		return "", fmt.Errorf("invalid ObjectID type")

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cprakhar/relief-ops/services/api-gateway/middleware"
+	"github.com/cprakhar/relief-ops/shared/observe/traces"
 	"github.com/cprakhar/relief-ops/shared/response"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -22,6 +23,8 @@ func NewHttpHandler(webURLs string) *gin.Engine {
 		MaxAge:           12 * time.Hour,
 		AllowCredentials: true,
 	}))
+
+	r.Use(traces.GinTracingMiddleware("api-gateway"))
 
 	apiGroup := r.Group("/api")
 	// Health check endpoint

@@ -6,7 +6,7 @@ import { FormEvent, useContext, useState } from "react"
 import z4 from "zod/v4"
 
 const signupSchema = z4.object({
-    username: z4.string().min(1, {error: "Username is required"}),
+    name: z4.string().min(1, {error: "Name is required"}),
     email: z4.email({error: "Invalid email address"}),
     password: z4.string().min(8, {error: "Password must be at least 8 characters"}),
     confirmPassword: z4.string()
@@ -33,10 +33,11 @@ const useAuth = (authMode: string) => {
         
         if (authMode === AuthMode.SIGNUP) {
             return {
-                username: formData.get("username") as string,
+                name: formData.get("name") as string,
                 email: formData.get("email") as string,
                 password: formData.get("password") as string,
                 confirmPassword: formData.get("confirmPassword") as string,
+                role: formData.get("role") as string,
             }
         } else {
             return {
@@ -85,13 +86,13 @@ const useAuth = (authMode: string) => {
             if (authMode === AuthMode.LOGIN) {
                 const loginData = formData as LoginFormData
                 const result = await login(loginData.email, loginData.password)
-                setUser(result.data)
+                setUser(result.data.user)
                 router.push("/dashboard")
             } else if (authMode === AuthMode.SIGNUP) {
                 const signupData = formData as SignupFormData
-                const result = await signup(signupData.username, signupData.email, signupData.password)
-                setUser(result.data)
-                router.push("/dashboard")
+                const role = signupData.role || "user"
+                await signup(signupData.name, signupData.email, signupData.password, role)
+                router.push("/auth")
             }
         } catch (err) {
             if (err && typeof err === "object" && "error" in err) {

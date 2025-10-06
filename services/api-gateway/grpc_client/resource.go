@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cprakhar/relief-ops/shared/env"
+	"github.com/cprakhar/relief-ops/shared/observe/traces"
 	pb "github.com/cprakhar/relief-ops/shared/proto/resource"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -17,9 +18,11 @@ type resourceServiceClient struct {
 // NewresourceServiceClient creates and returns a new gRPC client for the User Service.
 func NewResourceServiceClient() (*resourceServiceClient, error) {
 	resourceServiceURL := fmt.Sprintf("resource-service%s", env.GetString("RESOURCE_GRPC_ADDR", ":9001"))
-	conn, err := grpc.NewClient(resourceServiceURL,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+
+	dialOpts := traces.DialOptionsWithTracing()
+	dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.NewClient(resourceServiceURL, dialOpts...)
 	if err != nil {
 		return nil, err
 	}

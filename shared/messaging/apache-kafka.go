@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/cprakhar/relief-ops/shared/observe/traces"
 	"github.com/cprakhar/relief-ops/shared/tools"
 )
 
@@ -69,8 +70,8 @@ func (kc *KafkaClient) Produce(ctx context.Context, topic string, key string, va
 	// Use delivery channel to wait for confirmation
 	deliveryChan := make(chan kafka.Event, 1)
 
-	// Send the message
-	err := kc.Producer.Produce(message, deliveryChan)
+	// Send the message with tracing
+	err := traces.TracedProduce(ctx, kc.Producer.Produce, message, deliveryChan)
 	if err != nil {
 		return err
 	}
@@ -94,7 +95,7 @@ func (kc *KafkaClient) Produce(ctx context.Context, topic string, key string, va
 }
 
 // MessageHandler defines the function signature for handling messages
-type MessageHandler func(event, key string, value []byte) error
+type MessageHandler func(ctx context.Context, event, key string, value []byte) error
 
 // Consume starts consuming messages from the specified topics and processes them using the provided handler
 func (kc *KafkaClient) Consume(ctx context.Context, topics []string, handler MessageHandler) error {
@@ -135,7 +136,8 @@ func (kc *KafkaClient) Consume(ctx context.Context, topics []string, handler Mes
 			}
 
 			if err := tools.RetryWithBackoff(ctx, retryConfig, func() error {
-				return handler(*ev.TopicPartition.Topic, string(ev.Key), ev.Value)
+				// Call the traced handler
+				return traces.TracedConsumeHandler(ctx, handler, ev)
 			}); err != nil {
 				log.Printf("Error handling message after retries: %v", err)
 				// Send to Dead Letter Queue (DLQ)

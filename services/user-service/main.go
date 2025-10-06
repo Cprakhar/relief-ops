@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -16,10 +17,13 @@ import (
 	"github.com/cprakhar/relief-ops/shared/env"
 	"github.com/cprakhar/relief-ops/shared/events"
 	"github.com/cprakhar/relief-ops/shared/messaging"
+	"github.com/cprakhar/relief-ops/shared/observe/logs"
+	"github.com/cprakhar/relief-ops/shared/observe/traces"
 )
 
 var (
 	addr           = env.GetString("USER_GRPC_ADDR", ":9001")
+	environment    = env.GetString("ENVIRONMENT", "development")
 	webURL         = env.GetString("WEB_URL", "http://localhost:3000")
 	fromEmail      = env.GetString("FROM_EMAIL", "developerluffy23@gmail.com")
 	sendGridAPIKey = env.GetString("SENDGRID_API_KEY", "")
@@ -45,12 +49,46 @@ var (
 	mongoMaxPool = uint64(env.GetInt("MONGODB_MAX_POOL", 10))
 	mongoMinPool = uint64(env.GetInt("MONGODB_MIN_POOL", 2))
 	mongoTimeout = env.GetTimeDuration("MONGODB_TIMEOUT", 30*time.Second)
+
+	// OTLP configuration
+	otlpEndpoint = env.GetString("OTLP_ENDPOINT", "otel-collector:4317")
+	otlpInsecure = env.GetBool("OTLP_INSECURE", true)
 )
 
 func main() {
+	// Initialize logger
+	logger, err := logs.Init("user-service")
+	if err != nil {
+		log.Fatalf("Failed to initialize logger: %v", err)
+	}
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			logger.Errorw("Failed to sync logger", "error", err)
+		}
+	}()
+	logger.Info("Logger initialized")
+
 	// Set up context with signal handling for graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	tracerCfg := &traces.TracerConfig{
+		ServiceName:      "user-service",
+		Environment:      environment,
+		ExporterEndpoint: otlpEndpoint,
+		Secure:           !otlpInsecure,
+	}
+
+	shutdown, err := traces.InitTrace(ctx, tracerCfg)
+	if err != nil {
+		logger.Fatalw("Failed to initialize tracing", "error", err)
+	}
+	defer func() {
+		if err := shutdown(ctx); err != nil {
+			logger.Fatalw("Failed to shutdown tracer provider", "error", err)
+		}
+	}()
+	logger.Info("Tracing initialized")
 
 	redisCfg := &db.RedisConfig{
 		Addr:           redisAddr,
@@ -62,9 +100,9 @@ func main() {
 		MinIdleConns:   int(redisMinIdle),
 	}
 	if err := db.InitRedis(redisCfg); err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
+		logger.Fatalw("Failed to connect to Redis", "error", err)
 	}
-	log.Println("Connected to Redis")
+	logger.Info("Connected to Redis")
 
 	// Initialize MongoDB client
 	mongoCfg := &db.MongoDBConfig{
@@ -79,9 +117,9 @@ func main() {
 
 	mongoClient, err := db.NewMongoDBClient(mongoCfg)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		logger.Fatalw("Failed to connect to MongoDB", "error", err)
 	}
-	log.Println("Connected to MongoDB")
+	logger.Info("Connected to MongoDB")
 
 	// Initialize Kafka client
 	kafkaCfg := &messaging.KafkaConfig{
@@ -91,17 +129,17 @@ func main() {
 
 	kafkaClient, err := messaging.NewKafkaClient("user-service", kafkaCfg)
 	if err != nil {
-		log.Fatalf("Failed to create Kafka client: %v", err)
+		logger.Fatalw("Failed to create Kafka client", "error", err)
 	}
 	defer kafkaClient.Close()
-	log.Println("Kafka client initialized")
+	logger.Info("Kafka client initialized")
 
 	mailer := mail.NewSendGrid(fromEmail, sendGridAPIKey)
 
 	// Initialize repository and service
 	userRepo, err := repo.NewUserRepo(ctx, mongoClient)
 	if err != nil {
-		log.Fatalf("Failed to create user repository: %v", err)
+		logger.Fatalw("Failed to create user repository", "error", err)
 	}
 	userService := service.NewUserService(userRepo, jwtSecret, jwtExpiry)
 
@@ -109,24 +147,26 @@ func main() {
 	topics := []string{events.UserNotifyAdminReview}
 	disasterConsumer := event.NewDisasterConsumer(kafkaClient, userService, mailer, webURL)
 
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
 		if err := disasterConsumer.Consumer(ctx, topics); err != nil {
-			log.Printf("Error in disaster consumer: %v", err)
+			logger.Errorw("Error in disaster consumer", "error", err)
 		}
 	}()
 
 	// Initialize and run the gRPC server
 	gRPCServer := newgRPCServer(addr, userService, jwtSecret)
-
-	done := make(chan struct{})
+	wg.Add(1)
 	go func() {
-		defer close(done)
-		log.Printf("User service running on %s", addr)
+		defer wg.Done()
+		logger.Infow("User service running", "addr", addr)
 		if err := gRPCServer.run(ctx); err != nil {
-			log.Printf("gRPC server error: %v", err)
+			logger.Errorw("gRPC server error", "error", err)
 		}
 	}()
 	<-ctx.Done()
-	<-done
-	log.Println("User service stopped")
+	wg.Wait()
+	logger.Info("User service stopped")
 }

@@ -3,11 +3,11 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"log"
 
 	"github.com/cprakhar/relief-ops/services/disaster-service/service"
 	"github.com/cprakhar/relief-ops/shared/events"
 	"github.com/cprakhar/relief-ops/shared/messaging"
+	"github.com/cprakhar/relief-ops/shared/observe/logs"
 	pb "github.com/cprakhar/relief-ops/shared/proto/disaster"
 	"github.com/cprakhar/relief-ops/shared/types"
 	"google.golang.org/grpc"
@@ -28,6 +28,7 @@ func NewDisastergRPCHandler(srv *grpc.Server, svc service.DisasterService, kc *m
 	pb.RegisterDisasterServiceServer(srv, handler)
 }
 
+// GrpcHandler defines the interface for gRPC handler methods.
 type GrpcHandler interface {
 	ListDisasters(ctx context.Context, req *pb.ListDisastersRequest) (*pb.ListDisastersResponse, error)
 	GetDisaster(ctx context.Context, req *pb.GetDisasterRequest) (*pb.GetDisasterResponse, error)
@@ -37,6 +38,8 @@ type GrpcHandler interface {
 
 // ReportDisaster handles the reporting of a new disaster.
 func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisasterRequest) (*pb.ReportDisasterResponse, error) {
+	logger := logs.L()
+
 	disaster := &types.Disaster{
 		Title:       req.GetTitle(),
 		Description: req.GetDescription(),
@@ -69,10 +72,10 @@ func (h *gRPCHandler) ReportDisaster(ctx context.Context, req *pb.ReportDisaster
 	}
 
 	// Notify resource service to find resources around the disaster location
+	logger.Infow("Notifying resource service to find resources", "disaster_id", disasterID, "location", disaster.Location, "range", 10000)
 	if err := h.kafkaClient.Produce(ctx, events.ResourceCommandFind, disasterID, value); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to produce resource find command: %v", err)
 	}
-	log.Printf("Message delivered to resource-service with disasterID %s", disasterID)
 
 	return &pb.ReportDisasterResponse{
 		Id:     disasterID,

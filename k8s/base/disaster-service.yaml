@@ -24,6 +24,8 @@ spec:
             - configMapRef:
                 name: api-gateway-config
             - configMapRef:
+                name: logging-config
+            - configMapRef:
                 name: kafka-config
             - configMapRef:
                 name: mongodb-config

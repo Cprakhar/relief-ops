@@ -94,7 +94,7 @@ func (r *mongodbUserRepo) GetByEmail(ctx context.Context, email string) (*types.
 	if err != nil {
 		switch err {
 		case mongo.ErrNoDocuments:
-			return nil, fmt.Errorf("no user found")
+			return nil, ErrNoResourcesFound
 		default:
 			return nil, err
 		}

@@ -4,22 +4,23 @@ import (
 	"context"
 	"net"
 
-	"github.com/cprakhar/relief-ops/services/user-service/handler"
-	"github.com/cprakhar/relief-ops/services/user-service/service"
+	"github.com/cprakhar/relief-ops/services/resource-service/handler"
+	"github.com/cprakhar/relief-ops/services/resource-service/service"
+	"github.com/cprakhar/relief-ops/shared/messaging"
 	"github.com/cprakhar/relief-ops/shared/observe/logs"
 	"github.com/cprakhar/relief-ops/shared/observe/traces"
 	"google.golang.org/grpc"
 )
 
 type gRPCServer struct {
-	addr      string
-	svc       service.UserService
-	jwtSecret string
+	addr string
+	svc  service.ResourceService
+	kc   *messaging.KafkaClient
 }
 
 // newgRPCServer creates a new gRPC server instance.
-func newgRPCServer(addr string, svc service.UserService, s string) *gRPCServer {
-	return &gRPCServer{addr: addr, svc: svc, jwtSecret: s}
+func newgRPCServer(addr string, svc service.ResourceService, kc *messaging.KafkaClient) *gRPCServer {
+	return &gRPCServer{addr: addr, svc: svc, kc: kc}
 }
 
 // run starts the gRPC server and listens for incoming requests.
@@ -33,7 +34,7 @@ func (s *gRPCServer) run(ctx context.Context) error {
 
 	// Create a new gRPC server
 	srv := grpc.NewServer(traces.WithTracingInterceptors()...)
-	handler.NewUsergRPCHandler(srv, s.svc, s.jwtSecret)
+	handler.NewResourcegRPCHandler(srv, s.svc)
 
 	// Listen for incoming requests in a separate goroutine
 	errChan := make(chan error, 1)

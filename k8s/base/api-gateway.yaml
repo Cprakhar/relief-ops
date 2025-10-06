@@ -23,6 +23,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: api-gateway-config
+            - configMapRef:
+                name: logging-config
           resources:
             requests:
               memory: "128Mi"

@@ -87,6 +87,7 @@ func (s *userService) GetUserByID(ctx context.Context, id string) (*types.User, 
 	return s.repo.GetByID(ctx, id)
 }
 
+// OAuthSignIn handles user sign-in via OAuth providers.
 func (s *userService) OAuthSignIn(ctx context.Context, user *types.User) (string, error) {
 	uDetails := &util.UserDetails{
 		UserID: user.ID.Hex(),
@@ -102,6 +103,7 @@ func (s *userService) OAuthSignIn(ctx context.Context, user *types.User) (string
 	return token, nil
 }
 
+// GetUserByEmail retrieves a user by their email.
 func (s *userService) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
 	return s.repo.GetByEmail(ctx, email)
 }

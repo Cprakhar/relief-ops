@@ -24,6 +24,8 @@ spec:
             - configMapRef:
                 name: api-gateway-config
             - configMapRef:
+                name: logging-config
+            - configMapRef:
                 name: kafka-config
             - configMapRef:
                 name: redis-config
@@ -37,6 +39,8 @@ spec:
                 name: sendgrid-secret
             - secretRef:
                 name: jwt-secret
+            - secretRef:
+                name: oauth-secret
           resources:
             requests:
               memory: "128Mi"
